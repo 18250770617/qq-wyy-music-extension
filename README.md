@@ -8,7 +8,7 @@
 
 - 调用网易云官方 `@music163/ncm-cli` 搜索歌曲和歌单。
 - 点击歌曲播放；读取歌单后将可播歌曲加入队列。
-- 暂停、继续、上一首、下一首、音量和播放状态。
+- 暂停、继续、停止、上一首、下一首、音量和播放状态。
 - 使用官方配置向导和网易云 App 扫码登录。
 
 ### QQ 音乐
@@ -56,6 +56,8 @@ API 凭证申请入口：<https://developer.music.163.com/st/developer/apply/acc
 
 Windows 上通过 winget 安装的 mpv 有时不会自动加入 PATH；安装助手会补齐当前用户 PATH，桥接程序也会识别默认的 `C:\Program Files\MPV Player\mpv.exe`。若安装时 Edge 已经打开，请重启 Edge 后再检测。
 
+`ncm-cli 0.1.7` 在 Windows 上的控制命令偶尔会先超时、随后才开始播放。0.2.0 仍由官方 CLI 完成鉴权、搜索、取流和歌单队列，但暂停、继续、停止和音量会直接连接 CLI 创建的 `ncm-mpv` 本地管道，避免播放已经出声后控制状态丢失。扩展不会读取或接收播放 URL。
+
 ## 连接 QQ 音乐
 
 1. 打开扩展，选择“QQ 音乐”，点击“设置”。
@@ -82,7 +84,7 @@ Windows 上通过 winget 安装的 mpv 有时不会自动加入 PATH；安装助
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\Package.ps1
 ```
 
-桌面会生成 `CloudMusicEdge-v0.1.0.zip`。压缩包不包含 QQ Key、网易云凭据或登录态。另一台 Windows 电脑解压后重新运行 `安装.cmd`，再分别完成账号授权即可。
+桌面会生成 `CloudMusicEdge-v0.2.0.zip`。压缩包不包含 QQ Key、网易云凭据或登录态。另一台 Windows 电脑解压后重新运行 `安装.cmd`，再分别完成账号授权即可。
 
 ## 安全设计
 
@@ -100,3 +102,5 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\Test.ps1
 ```
 
 测试覆盖 Manifest 权限、JavaScript 语法、C# 构建、Native Messaging 帧和动作白名单。真实账号登录、会员版权以及第三方官方服务可用性必须由用户在自己的账号环境中人工验证。
+
+已完成网易云真实账号端到端验证时，还可运行 `node .\tests\native-live-netease.js`。它会搜索并播放一个歌单，严格检查播放、暂停、继续、下一首和状态，随后自动停止音乐。

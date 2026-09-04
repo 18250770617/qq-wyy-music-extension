@@ -24,7 +24,7 @@
     <div class="shell right">
       <button class="orb" aria-label="打开 CloudMusic Edge"><span>CM</span><i></i></button>
       <div class="tray">
-        <button data-control="prev" title="上一首">◀</button><button data-control="pause" title="暂停">Ⅱ</button><button data-control="resume" class="primary" title="继续">▶</button><button data-control="next" title="下一首">▶▶</button><button data-open-search title="搜索">⌕</button>
+        <button data-control="prev" title="上一首">◀</button><button data-control="pause" title="暂停">Ⅱ</button><button data-control="resume" class="primary" title="继续">▶</button><button data-control="next" title="下一首">▶▶</button><button data-control="stop" title="停止">■</button><button data-open-search title="搜索">⌕</button>
       </div>
       <section class="panel">
         <div class="head"><span class="brand">CLOUDMUSIC EDGE</span><button class="provider">网易云</button></div>
@@ -94,7 +94,7 @@
   function normalize(data) {
     if(provider==="qq") return (data.songs||[]).map(x=>({title:x.songName,meta:x.singerName,url:x.songH5Url,mid:x.songMid}));
     const list=arrays(data.payload).sort((a,b)=>b.length-a.length)[0]||[];
-    return list.map(x=>({title:x.name||x.songName||"未命名",meta:x.artistName||x.singerName||"网易云音乐",encryptedId:x.encryptedId||x.encrypted_id,originalId:String(x.originalId||x.original_id||""),visible:x.visible!==false&&x.plLevel!=="none"&&x.freeTrailFlag!==true})).filter(x=>x.encryptedId&&x.visible);
+    return list.map(x=>({title:x.name||x.songName||"未命名",meta:x.artistName||x.singerName||(x.artists||x.fullArtists||[]).map(a=>a&&a.name).filter(Boolean).join(" / ")||"网易云音乐",encryptedId:x.encryptedId||x.encrypted_id||x.id,originalId:String(x.originalId||x.original_id||""),visible:x.visible!==false&&x.playFlag!==false&&x.plLevel!=="none"})).filter(x=>x.encryptedId&&x.visible);
   }
   function officialQqUrl(candidate, mid) {
     let url; try { url=new URL(candidate||""); } catch { url=null; }

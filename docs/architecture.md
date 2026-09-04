@@ -9,7 +9,7 @@ Edge popup
    │ chrome.runtime.connectNative
    ▼
 CloudMusicBridge.exe
-   ├─ NetEaseProvider ── 官方 ncm-cli ── mpv
+   ├─ NetEaseProvider ── 官方 ncm-cli ── mpv（控制复用 ncm-mpv 本地 IPC）
    └─ QQProvider ─────── 官方 a.y.qq.com API / QQ H5
 ```
 
@@ -41,4 +41,3 @@ CloudMusicBridge.exe
 ## 扩展方式
 
 新增官方 Provider 时，在 Host 中新增动作处理和诊断，在 Popup 中增加独立渲染映射。只有多个 Provider 已产生稳定重复后才抽取公共映射。
-

@@ -99,13 +99,14 @@ function normalizeNetease(data, type) {
   return items.map((item) => {
     const encryptedId = item.encryptedId || item.encrypted_id || item.id || item.resourceId;
     const originalId = item.originalId || item.original_id || item.originId || item.rawId;
+    const artists = item.artists || item.fullArtists || [];
     return {
       kind: type,
       title: item.name || item.songName || item.playlistName || item.title || "未命名",
-      meta: item.artistName || item.singerName || item.creatorName || item.description || "网易云音乐",
+      meta: item.artistName || item.singerName || artists.map((artist) => artist?.name).filter(Boolean).join(" / ") || item.creatorName || item.description || "网易云音乐",
       encryptedId: typeof encryptedId === "string" ? encryptedId : "",
       originalId: String(originalId || ""),
-      visible: item.visible !== false && item.plLevel !== "none" && item.freeTrailFlag !== true
+      visible: item.visible !== false && item.playFlag !== false && item.plLevel !== "none"
     };
   }).filter((item) => item.encryptedId);
 }

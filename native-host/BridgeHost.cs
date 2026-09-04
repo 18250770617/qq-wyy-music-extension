@@ -6,24 +6,40 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.IO.Pipes;
 using System.Security.Cryptography;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Web.Script.Serialization;
 
 namespace CloudMusicEdge
 {
     internal static class BridgeHost
     {
-        private const string Version = "0.1.0";
+        private const string Version = "0.2.0";
         private const string QqBaseUrl = "https://a.y.qq.com";
         private const string QqSkillVersion = "0.0.3";
         private static readonly JavaScriptSerializer Json = new JavaScriptSerializer { MaxJsonLength = 8 * 1024 * 1024 };
         private static readonly string AppData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CloudMusicEdge");
         private static readonly string QqKeyFile = Path.Combine(AppData, "qq.key");
+        private static readonly string PlayerStateFile = Path.Combine(AppData, "netease-player.json");
+        private static readonly Mutex PlayerStateLock = new Mutex(false, "Local\\CloudMusicEdge.PlayerState");
+        private const string PlayerPipeName = "ncm-mpv";
         private static readonly string BaseDirectory = AppDomain.CurrentDomain.BaseDirectory;
         private static readonly Regex EncryptedId = new Regex("^[a-fA-F0-9]{32}$", RegexOptions.Compiled);
         private static readonly Regex NumericId = new Regex("^[0-9]{1,20}$", RegexOptions.Compiled);
+        private const uint HandleFlagInherit = 0x00000001;
+        private const int StdInputHandle = -10;
+        private const int StdOutputHandle = -11;
+        private const int StdErrorHandle = -12;
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr GetStdHandle(int handle);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetHandleInformation(IntPtr handle, uint mask, uint flags);
 
         public static int Main(string[] args)
         {
@@ -37,6 +53,7 @@ namespace CloudMusicEdge
             }
             Console.InputEncoding = Encoding.UTF8;
             Console.OutputEncoding = Encoding.UTF8;
+            PreventChildHandleInheritance();
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             Directory.CreateDirectory(AppData);
 
@@ -191,7 +208,12 @@ namespace CloudMusicEdge
         {
             string encrypted = RequireEncryptedId(payload, "encryptedId");
             string original = RequireNumericId(payload, "originalId");
-            return RunNcm(new[] { "play", "--song", "--encrypted-id", encrypted, "--original-id", original }, 30000);
+            var queue = new ArrayList { Track(encrypted, original, GetString(payload, "title", 200, false), GetString(payload, "meta", 300, false)) };
+            SavePlayerState(queue, 0, 50, "loading");
+            RunNcm(new[] { "play", "--song", "--encrypted-id", encrypted, "--original-id", original }, 30000);
+            WaitForMpv();
+            SavePlayerState(queue, 0, 50, "playing");
+            return ManagedStateResult(LoadPlayerState(), "开始播放");
         }
 
         private static object NeteaseQueueAdd(Dictionary<string, object> payload)
@@ -205,21 +227,242 @@ namespace CloudMusicEdge
         {
             string encrypted = RequireEncryptedId(payload, "encryptedId");
             string original = RequireNumericId(payload, "originalId");
-            return RunNcm(new[] { "play", "--playlist", "--encrypted-id", encrypted, "--original-id", original }, 30000);
+            var result = RunNcm(new[] { "playlist", "tracks", "--playlistId", encrypted, "--limit", "500" }, 45000) as Dictionary<string, object>;
+            var root = result == null ? null : result["payload"] as Dictionary<string, object>;
+            object rawData;
+            var queue = new ArrayList();
+            if (root != null && root.TryGetValue("data", out rawData))
+            {
+                var items = rawData as IEnumerable;
+                if (items != null)
+                {
+                    foreach (object raw in items)
+                    {
+                        var item = raw as Dictionary<string, object>;
+                        if (item == null || !IsPlayable(item)) continue;
+                        string id = Value(item, "id");
+                        string originalId = Value(item, "originalId");
+                        if (!EncryptedId.IsMatch(id) || !NumericId.IsMatch(originalId)) continue;
+                        queue.Add(Track(id, originalId, Value(item, "name"), ArtistNames(item)));
+                    }
+                }
+            }
+            if (queue.Count == 0) throw new UserError("歌单中没有可播放的歌曲");
+            SavePlayerState(queue, 0, 50, "loading");
+            RunNcm(new[] { "play", "--playlist", "--encrypted-id", encrypted, "--original-id", original }, 30000);
+            WaitForMpv();
+            SavePlayerState(queue, 0, 50, "playing");
+            return ManagedStateResult(LoadPlayerState(), "歌单已开始播放");
         }
 
         private static object NeteaseControl(Dictionary<string, object> payload)
         {
             string name = GetString(payload, "name", 20, true);
+            Dictionary<string, object> state = LoadPlayerState();
             switch (name)
             {
-                case "pause": case "resume": case "next": case "prev": case "state":
-                    return RunNcm(new[] { name }, 12000);
+                case "pause":
+                    SendMpv(new object[] { "set_property", "pause", true });
+                    state["status"] = "paused"; SavePlayerState(state); return ManagedStateResult(state, "已暂停");
+                case "resume":
+                    SendMpv(new object[] { "set_property", "pause", false });
+                    state["status"] = "playing"; SavePlayerState(state); return ManagedStateResult(state, "继续播放");
+                case "stop":
+                    RunNcm(new[] { "stop" }, 12000);
+                    state["status"] = "stopped"; SavePlayerState(state); return ManagedStateResult(state, "已停止播放");
+                case "next": return MoveManagedTrack(state, 1);
+                case "prev": return MoveManagedTrack(state, -1);
+                case "state":
+                    bool? paused = GetMpvPaused();
+                    state["status"] = !paused.HasValue ? "stopped" : paused.Value ? "paused" : "playing";
+                    SavePlayerState(state); return ManagedStateResult(state, "状态已刷新");
                 case "volume":
                     int volume = GetInt(payload, "value", 0, 100);
-                    return RunNcm(new[] { "volume", volume.ToString() }, 12000);
+                    SendMpv(new object[] { "set_property", "volume", volume });
+                    state["volume"] = volume; SavePlayerState(state); return ManagedStateResult(state, "音量已调整");
                 default: throw new UserError("不支持的播放控制");
             }
+        }
+
+        private static void PreventChildHandleInheritance()
+        {
+            int[] handles = new[] { StdInputHandle, StdOutputHandle, StdErrorHandle };
+            foreach (int name in handles)
+            {
+                IntPtr handle = GetStdHandle(name);
+                if (handle != IntPtr.Zero && handle != new IntPtr(-1)) SetHandleInformation(handle, HandleFlagInherit, 0);
+            }
+        }
+
+        private static Dictionary<string, object> Track(string encryptedId, string originalId, string title, string meta)
+        {
+            return Map("encryptedId", encryptedId, "originalId", originalId, "title", title, "meta", meta);
+        }
+
+        private static string Value(Dictionary<string, object> map, string name, string fallback = "")
+        {
+            object raw;
+            return map != null && map.TryGetValue(name, out raw) && raw != null ? Convert.ToString(raw) : fallback;
+        }
+
+        private static bool IsPlayable(Dictionary<string, object> item)
+        {
+            object raw;
+            if (item.TryGetValue("visible", out raw) && raw is bool && !(bool)raw) return false;
+            if (item.TryGetValue("playFlag", out raw) && raw is bool && !(bool)raw) return false;
+            return !String.Equals(Value(item, "plLevel"), "none", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string ArtistNames(Dictionary<string, object> item)
+        {
+            object raw;
+            if (!item.TryGetValue("artists", out raw)) item.TryGetValue("fullArtists", out raw);
+            var artists = raw as IEnumerable;
+            if (artists == null) return Value(item, "artistName");
+            var names = new List<string>();
+            foreach (object artist in artists)
+            {
+                var map = artist as Dictionary<string, object>;
+                string name = Value(map, "name");
+                if (!String.IsNullOrWhiteSpace(name)) names.Add(name);
+            }
+            return String.Join(" / ", names.ToArray());
+        }
+
+        private static Dictionary<string, object> LoadPlayerState()
+        {
+            try
+            {
+                if (File.Exists(PlayerStateFile))
+                {
+                    var parsed = Json.DeserializeObject(File.ReadAllText(PlayerStateFile, Encoding.UTF8)) as Dictionary<string, object>;
+                    if (parsed != null) return parsed;
+                }
+            }
+            catch { }
+            return Map("queue", new ArrayList(), "currentIndex", 0, "volume", 50, "status", "stopped", "title", "", "meta", "");
+        }
+
+        private static void SavePlayerState(ArrayList queue, int index, int volume, string status)
+        {
+            var track = queue[index] as Dictionary<string, object>;
+            SavePlayerState(Map("queue", queue, "currentIndex", index, "volume", volume, "status", status,
+                "title", Value(track, "title"), "meta", Value(track, "meta")));
+        }
+
+        private static void SavePlayerState(Dictionary<string, object> state)
+        {
+            Directory.CreateDirectory(AppData);
+            bool locked = false;
+            string temporary = PlayerStateFile + "." + Process.GetCurrentProcess().Id + ".tmp";
+            try
+            {
+                locked = PlayerStateLock.WaitOne(5000);
+                if (!locked) throw new UserError("播放器状态正忙，请重试");
+                File.WriteAllText(temporary, Json.Serialize(state), new UTF8Encoding(false));
+                if (File.Exists(PlayerStateFile)) File.Replace(temporary, PlayerStateFile, null);
+                else File.Move(temporary, PlayerStateFile);
+            }
+            finally
+            {
+                try { if (File.Exists(temporary)) File.Delete(temporary); } catch { }
+                if (locked) PlayerStateLock.ReleaseMutex();
+            }
+        }
+
+        private static object MoveManagedTrack(Dictionary<string, object> state, int delta)
+        {
+            var queue = new ArrayList();
+            object rawQueue;
+            var items = state.TryGetValue("queue", out rawQueue) ? rawQueue as IEnumerable : null;
+            if (items != null) foreach (object item in items) queue.Add(item);
+            if (queue.Count == 0) throw new UserError("当前播放队列为空");
+            int index;
+            if (!Int32.TryParse(Value(state, "currentIndex", "0"), out index)) index = 0;
+            index = (index + delta + queue.Count) % queue.Count;
+            int volume;
+            if (!Int32.TryParse(Value(state, "volume", "50"), out volume)) volume = 50;
+            RunNcm(new[] { delta > 0 ? "next" : "prev" }, 12000);
+            SavePlayerState(queue, index, volume, "playing");
+            return ManagedStateResult(LoadPlayerState(), delta > 0 ? "下一首" : "上一首");
+        }
+
+        private static void WaitForMpv()
+        {
+            for (int i = 0; i < 50; i++)
+            {
+                if (IsMpvReady()) return;
+                Thread.Sleep(100);
+            }
+            throw new UserError("官方播放器尚未就绪，请重试一次");
+        }
+
+        private static bool TrySendMpv(object[] command)
+        {
+            try
+            {
+                using (var pipe = new NamedPipeClientStream(".", PlayerPipeName, PipeDirection.InOut))
+                {
+                    pipe.Connect(800);
+                    byte[] message = Encoding.UTF8.GetBytes(Json.Serialize(Map("command", command)) + "\n");
+                    pipe.Write(message, 0, message.Length);
+                    pipe.Flush();
+                    using (var reader = new StreamReader(pipe, Encoding.UTF8, false, 1024, true))
+                    {
+                        var pending = reader.ReadLineAsync();
+                        if (!pending.Wait(1500) || String.IsNullOrWhiteSpace(pending.Result)) return false;
+                        var response = Json.DeserializeObject(pending.Result) as Dictionary<string, object>;
+                        return response != null && String.Equals(Value(response, "error"), "success", StringComparison.OrdinalIgnoreCase);
+                    }
+                }
+            }
+            catch { return false; }
+        }
+
+        private static bool? GetMpvPaused()
+        {
+            try
+            {
+                using (var pipe = new NamedPipeClientStream(".", PlayerPipeName, PipeDirection.InOut))
+                {
+                    pipe.Connect(800);
+                    byte[] message = Encoding.UTF8.GetBytes(Json.Serialize(Map("command", new object[] { "get_property", "pause" })) + "\n");
+                    pipe.Write(message, 0, message.Length);
+                    pipe.Flush();
+                    using (var reader = new StreamReader(pipe, Encoding.UTF8, false, 1024, true))
+                    {
+                        var pending = reader.ReadLineAsync();
+                        if (!pending.Wait(1500) || String.IsNullOrWhiteSpace(pending.Result)) return null;
+                        var response = Json.DeserializeObject(pending.Result) as Dictionary<string, object>;
+                        object data;
+                        if (response == null || !String.Equals(Value(response, "error"), "success", StringComparison.OrdinalIgnoreCase) ||
+                            !response.TryGetValue("data", out data) || !(data is bool)) return null;
+                        return (bool)data;
+                    }
+                }
+            }
+            catch { return null; }
+        }
+
+        private static void SendMpv(object[] command)
+        {
+            if (!TrySendMpv(command)) throw new UserError("当前没有正在播放的内容");
+        }
+
+        private static bool IsMpvReady()
+        {
+            return GetMpvPaused().HasValue;
+        }
+
+        private static object ManagedStateResult(Dictionary<string, object> state, string message)
+        {
+            object rawQueue;
+            var queue = state.TryGetValue("queue", out rawQueue) ? rawQueue as ICollection : null;
+            var view = Map("status", Value(state, "status", "stopped"), "currentIndex", Convert.ToInt32(Value(state, "currentIndex", "0")),
+                "queueLength", queue == null ? 0 : queue.Count, "volume", Convert.ToInt32(Value(state, "volume", "50")),
+                "title", Value(state, "title"), "meta", Value(state, "meta"));
+            var payload = Map("success", true, "message", message, "state", view);
+            return Map("stdout", Json.Serialize(payload), "payload", payload, "exitCode", 0, "managedPlayer", true);
         }
 
         private static object RunNcm(string[] arguments, int timeoutMs)
@@ -229,11 +472,16 @@ namespace CloudMusicEdge
             var all = new string[arguments.Length + 1];
             all[0] = runtime.ScriptPath;
             Array.Copy(arguments, 0, all, 1, arguments.Length);
-            ProcessResult result = Run(runtime.NodePath, all, timeoutMs);
+            string mpv = FindExecutable("mpv.exe");
+            ProcessResult result = Run(runtime.NodePath, all, timeoutMs, mpv == null ? null : Path.GetDirectoryName(mpv));
             string combined = (result.Stdout + "\n" + result.Stderr).Trim();
             if (result.TimedOut) throw new UserError("ncm-cli 操作超时，请检查网络或运行检测脚本");
             if (result.ExitCode != 0) throw new UserError(Compact(combined, 800));
             object payload = TryParseJson(result.Stdout);
+            var payloadMap = payload as Dictionary<string, object>;
+            object success;
+            if (payloadMap != null && payloadMap.TryGetValue("success", out success) && success is bool && !(bool)success)
+                throw new UserError(payloadMap.ContainsKey("message") ? SafeMessage(Convert.ToString(payloadMap["message"])) : "ncm-cli 操作失败");
             return Map("stdout", StripAnsi(result.Stdout), "payload", payload, "exitCode", result.ExitCode);
         }
 
@@ -362,7 +610,7 @@ namespace CloudMusicEdge
             return null;
         }
 
-        private static ProcessResult Run(string executable, IEnumerable<string> arguments, int timeoutMs)
+        private static ProcessResult Run(string executable, IEnumerable<string> arguments, int timeoutMs, string prependPath = null)
         {
             var argumentLine = new StringBuilder();
             foreach (string argument in arguments)
@@ -379,17 +627,38 @@ namespace CloudMusicEdge
                 StandardOutputEncoding = Encoding.UTF8,
                 StandardErrorEncoding = Encoding.UTF8
             };
+            if (!String.IsNullOrWhiteSpace(prependPath))
+            {
+                string existingPath = info.EnvironmentVariables["PATH"] ?? "";
+                info.EnvironmentVariables["PATH"] = prependPath + Path.PathSeparator + existingPath;
+            }
             using (var process = Process.Start(info))
             {
-                string stdout = process.StandardOutput.ReadToEnd();
-                string stderr = process.StandardError.ReadToEnd();
+                var stdout = new StringBuilder();
+                var stderr = new StringBuilder();
+                process.OutputDataReceived += delegate(object sender, DataReceivedEventArgs eventArgs)
+                {
+                    if (eventArgs.Data != null) lock (stdout) stdout.AppendLine(eventArgs.Data);
+                };
+                process.ErrorDataReceived += delegate(object sender, DataReceivedEventArgs eventArgs)
+                {
+                    if (eventArgs.Data != null) lock (stderr) stderr.AppendLine(eventArgs.Data);
+                };
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
                 bool exited = process.WaitForExit(timeoutMs);
                 if (!exited)
                 {
                     try { process.Kill(); } catch { }
-                    return new ProcessResult { ExitCode = -1, Stdout = stdout, Stderr = stderr, TimedOut = true };
+                    try { process.CancelOutputRead(); } catch { }
+                    try { process.CancelErrorRead(); } catch { }
+                    return new ProcessResult { ExitCode = -1, Stdout = stdout.ToString(), Stderr = stderr.ToString(), TimedOut = true };
                 }
-                return new ProcessResult { ExitCode = process.ExitCode, Stdout = stdout, Stderr = stderr };
+                Thread.Sleep(80);
+                int exitCode = process.ExitCode;
+                try { process.CancelOutputRead(); } catch { }
+                try { process.CancelErrorRead(); } catch { }
+                return new ProcessResult { ExitCode = exitCode, Stdout = stdout.ToString(), Stderr = stderr.ToString() };
             }
         }
 
