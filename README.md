@@ -52,6 +52,8 @@ API 凭证申请入口：<https://developer.music.163.com/st/developer/apply/acc
 
 本项目不会接触网易云 Private Key 或登录态，它们由 ncm-cli 自己管理。会员歌曲能否播放仍由账号权益和歌曲版权决定。
 
+Windows 上通过 winget 安装的 mpv 有时不会自动加入 PATH；安装助手会补齐当前用户 PATH，桥接程序也会识别默认的 `C:\Program Files\MPV Player\mpv.exe`。若安装时 Edge 已经打开，请重启 Edge 后再检测。
+
 ## 连接 QQ 音乐
 
 1. 打开扩展，选择“QQ 音乐”，点击“设置”。

@@ -344,6 +344,19 @@ namespace CloudMusicEdge
                 }
                 catch { }
             }
+            if (String.Equals(name, "mpv.exe", StringComparison.OrdinalIgnoreCase))
+            {
+                string[] knownMpvLocations = new[]
+                {
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "MPV Player", "mpv.exe"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Microsoft", "WinGet", "Links", "mpv.exe")
+                };
+                foreach (string candidate in knownMpvLocations)
+                {
+                    try { if (File.Exists(candidate)) return Path.GetFullPath(candidate); }
+                    catch { }
+                }
+            }
             return null;
         }
 

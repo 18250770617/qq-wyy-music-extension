@@ -5,7 +5,16 @@ $ErrorActionPreference = 'Stop'
 function Refresh-Path {
     $machine = [Environment]::GetEnvironmentVariable('Path', 'Machine')
     $user = [Environment]::GetEnvironmentVariable('Path', 'User')
-    $env:Path = "$machine;$user"
+    $parts = @($env:Path, $machine, $user) -join ';'
+    $env:Path = (($parts -split ';' | Where-Object { $_ } | Select-Object -Unique) -join ';')
+}
+function Add-ToUserPath([string]$Directory) {
+    if (-not $Directory -or -not (Test-Path -LiteralPath $Directory)) { return }
+    $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+    $entries = @($userPath -split ';' | Where-Object { $_ })
+    if ($entries | Where-Object { $_.TrimEnd('\') -ieq $Directory.TrimEnd('\') }) { return }
+    [Environment]::SetEnvironmentVariable('Path', (($entries + $Directory) -join ';'), 'User')
+    Write-Host "已将 mpv 目录加入当前用户 PATH：$Directory" -ForegroundColor DarkGray
 }
 function Require-Command([string]$Name, [string]$Help) {
     if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) { throw $Help }
@@ -34,10 +43,25 @@ if ($Mode -eq 'Install') {
         if (Get-Command winget -ErrorAction SilentlyContinue) {
             Write-Host '正在通过 winget 安装 mpv…'
             winget install --id shinchiro.mpv -e --accept-package-agreements --accept-source-agreements
+            $mpvInstallExitCode = $LASTEXITCODE
             Refresh-Path
         } else {
             Write-Host '未找到 mpv 和 winget。请从 https://mpv.io/installation/ 安装 mpv。' -ForegroundColor Yellow
         }
+    }
+    if (-not (Get-Command mpv -ErrorAction SilentlyContinue)) {
+        $knownMpv = @(
+            (Join-Path $env:ProgramFiles 'MPV Player\mpv.exe'),
+            (Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Links\mpv.exe')
+        ) | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+        if ($knownMpv) {
+            Add-ToUserPath (Split-Path -Parent $knownMpv)
+            Refresh-Path
+        }
+    }
+    if (-not (Get-Command mpv -ErrorAction SilentlyContinue)) {
+        if ($mpvInstallExitCode) { throw "mpv 安装失败（winget 退出码 $mpvInstallExitCode）。" }
+        Write-Host 'mpv 已安装但当前终端仍无法定位；请重开 Edge，或重新运行本助手。' -ForegroundColor Yellow
     }
     Write-Host '依赖安装完成。下一步请选择“配置并登录”，或运行：ncm-cli configure' -ForegroundColor Green
 }
@@ -55,4 +79,3 @@ else {
     Require-Command ncm-cli '未找到 ncm-cli，请先安装。'
     ncm-cli tui
 }
-
