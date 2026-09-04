@@ -120,6 +120,8 @@ namespace CloudMusicEdge
                 string combined = (check.Stdout + " " + check.Stderr).Trim();
                 loginReady = check.ExitCode == 0 && !Regex.IsMatch(combined, "未登录|请先登录|API key 未设置|not logged|unauthorized", RegexOptions.IgnoreCase);
                 ncmDetail = loginReady ? (mpv == null ? "已登录，但未检测到 mpv" : "官方 ncm-cli、登录和 mpv 已就绪") : Compact(combined, 160);
+                if (Regex.IsMatch(combined, "API key 未设置", RegexOptions.IgnoreCase))
+                    ncmDetail = "已安装依赖；请在开放平台创建应用，再配置 App ID、Private Key 并扫码登录";
                 if (String.IsNullOrWhiteSpace(ncmDetail)) ncmDetail = "ncm-cli 尚未完成配置或登录";
             }
 

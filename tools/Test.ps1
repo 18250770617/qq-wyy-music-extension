@@ -19,7 +19,7 @@ Get-ChildItem -LiteralPath (Join-Path $projectRoot 'tools') -Filter '*.ps1' | Fo
 $assistantSmoke = & powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File (Join-Path $projectRoot 'tools\SetupAssistant.ps1') -SmokeTest | ConvertFrom-Json
 if (-not $assistantSmoke.ready -or -not $assistantSmoke.extensionPathExists -or $assistantSmoke.controls -lt 10) { throw '图形设置助手运行时冒烟测试失败。' }
 
-& (Join-Path $PSScriptRoot 'Build.ps1')
+& (Join-Path $PSScriptRoot 'Build.ps1') -Force
 if (Get-Command node -ErrorAction SilentlyContinue) {
     Get-ChildItem -LiteralPath (Join-Path $projectRoot 'extension') -Filter '*.js' | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { throw "JavaScript 语法错误：$($_.Name)" } }
     node (Join-Path $projectRoot 'tests\native-smoke.js')

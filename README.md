@@ -48,7 +48,9 @@ QQ 的公开官方 API 当前不返回第三方音频播放流，因此 QQ 模�
 3. 点击“配置并登录”。按官方向导填写开放平台 App ID 和 Private Key，再用网易云 App 扫码。
 4. 回到扩展点击右上角刷新按钮，看到“连接可用”后即可搜索播放。
 
-API 凭证申请入口：<https://developer.music.163.com/st/developer/apply/account?type=INDIVIDUAL>
+API 凭证申请入口：<https://developer.music.163.com/st/developer/apply/account?type=INDIVIDUAL>。先完成个人开发者入驻审核，再到“应用管理”创建应用，最后把该应用的 App ID 和 Private Key 直接填入官方 `ncm-cli configure` 向导。会员身份不能替代开发者认证。
+
+相关官方接口、签名与上线文档索引见 [`docs/netease-official-api.md`](docs/netease-official-api.md)。
 
 本项目不会接触网易云 Private Key 或登录态，它们由 ncm-cli 自己管理。会员歌曲能否播放仍由账号权益和歌曲版权决定。
 

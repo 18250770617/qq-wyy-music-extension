@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param()
+param([switch]$Force)
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
@@ -12,8 +12,12 @@ $compilerCandidates = @(
 $compiler = $compilerCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
 if (-not $compiler) { throw '未找到 Windows .NET Framework C# 编译器。请在“启用或关闭 Windows 功能”中启用 .NET Framework 4.x。' }
 
+if (-not $Force -and (Test-Path -LiteralPath $output) -and (Get-Item -LiteralPath $output).LastWriteTimeUtc -ge (Get-Item -LiteralPath $source).LastWriteTimeUtc) {
+    Write-Host "桥接程序已是最新：$output" -ForegroundColor DarkGray
+    return
+}
+
 & $compiler /nologo /target:exe /optimize+ /out:$output /reference:System.dll /reference:System.Core.dll /reference:System.Net.Http.dll /reference:System.Security.dll /reference:System.Web.Extensions.dll $source
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $output)) { throw '本地桥接编译失败。' }
 
 Write-Host "构建完成：$output" -ForegroundColor Green
-
