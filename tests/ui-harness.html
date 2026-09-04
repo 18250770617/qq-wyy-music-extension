@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><title>CloudMusic Edge UI Harness</title><style>body{margin:0;min-height:100vh;background:linear-gradient(135deg,#e9edf5,#c6cfde);font:16px system-ui;color:#263044}.demo{max-width:720px;margin:12vh auto;padding:38px;border-radius:28px;background:#ffffffb0;box-shadow:0 30px 80px #42516b25}.demo h1{font-size:42px;margin:0 0 12px}.demo p{line-height:1.8;color:#667085}</style></head>
+<body><section class="demo"><h1>UI 验证页面</h1><p>用于检查 CloudMusic Edge 悬浮球的吸附、展开和搜索卡片。这里不会连接真实音乐账号。</p></section>
+<script>
+  const state={provider:"netease"};
+  globalThis.chrome={storage:{local:{get:(defaults,cb)=>cb({...defaults,...state}),set:(value)=>Object.assign(state,value)}},runtime:{sendMessage:async(message)=>{
+    if(message.action?.endsWith(".search")) return {ok:true,data:message.action.startsWith("qq")?{songs:[{songName:"晴天",singerName:"周杰伦",songMid:"demo",songH5Url:"https://y.qq.com"},{songName:"夜曲",singerName:"周杰伦",songMid:"demo2",songH5Url:"https://y.qq.com"}]}:{payload:{songs:[{name:"晴天",artistName:"周杰伦",encryptedId:"0123456789abcdef0123456789abcdef",originalId:"186016",visible:true},{name:"夜曲",artistName:"周杰伦",encryptedId:"abcdef0123456789abcdef0123456789",originalId:"185868",visible:true}]}}};
+    return {ok:true,data:{}};
+  }}};
+</script>
+<script src="../extension/floating.js"></script>
+</body></html>
+

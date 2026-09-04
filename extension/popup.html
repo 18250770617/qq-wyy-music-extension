@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>CloudMusic Edge</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main>
+      <header class="hero">
+        <div>
+          <p class="eyebrow">CLOUDMUSIC EDGE</p>
+          <h1>音乐，轻轻一点</h1>
+        </div>
+        <button id="refresh" class="icon-button" title="重新检测" aria-label="重新检测">↻</button>
+      </header>
+
+      <nav class="providers" aria-label="音乐平台">
+        <button class="provider active" data-provider="netease">
+          <span class="provider-mark netease">云</span>
+          <span>网易云音乐</span>
+        </button>
+        <button class="provider" data-provider="qq">
+          <span class="provider-mark qq">Q</span>
+          <span>QQ 音乐</span>
+        </button>
+      </nav>
+
+      <section id="connection" class="connection" aria-live="polite">
+        <span id="status-dot" class="status-dot checking"></span>
+        <div class="grow">
+          <strong id="status-title">正在检测本地连接…</strong>
+          <p id="status-detail">请稍候</p>
+        </div>
+        <button id="setup" class="text-button">设置</button>
+      </section>
+
+      <button id="enable-floating" class="floating-enable">
+        <span>◉</span>
+        <span class="grow"><strong>在当前网站启用悬浮球</strong><small>仅授权当前站点，不读取页面内容</small></span>
+        <span>›</span>
+      </button>
+
+      <section class="search-panel">
+        <div class="search-row">
+          <input id="keyword" type="search" maxlength="100" placeholder="搜索歌曲或歌单" autocomplete="off" />
+          <button id="search" class="primary">搜索</button>
+        </div>
+        <div class="type-switch" role="group" aria-label="搜索类型">
+          <button class="type active" data-type="song">歌曲</button>
+          <button class="type" data-type="playlist">歌单</button>
+        </div>
+      </section>
+
+      <section id="notice" class="notice hidden" aria-live="polite"></section>
+      <section id="results" class="results" aria-label="搜索结果">
+        <div class="empty">
+          <span>♫</span>
+          <p>选择平台，然后搜索想听的音乐</p>
+        </div>
+      </section>
+
+      <section id="player" class="player">
+        <div class="now-playing">
+          <span class="disc">♪</span>
+          <div class="grow">
+            <strong id="track-title">网易云播放控制</strong>
+            <p id="track-detail">连接后可控制 ncm-cli</p>
+          </div>
+        </div>
+        <div class="controls">
+          <button data-control="prev" aria-label="上一首">◀</button>
+          <button data-control="pause" aria-label="暂停">Ⅱ</button>
+          <button data-control="resume" class="play" aria-label="继续播放">▶</button>
+          <button data-control="next" aria-label="下一首">▶▶</button>
+          <button data-control="state" aria-label="刷新播放状态">●</button>
+        </div>
+        <label class="volume">音量 <input id="volume" type="range" min="0" max="100" value="60" /></label>
+      </section>
+
+      <dialog id="settings">
+        <form method="dialog">
+          <div class="dialog-head">
+            <div>
+              <p class="eyebrow">连接设置</p>
+              <h2 id="settings-title">网易云音乐</h2>
+            </div>
+            <button value="cancel" class="icon-button" aria-label="关闭">×</button>
+          </div>
+
+          <div id="netease-settings">
+            <p class="help">使用网易云官方 ncm-cli。本项目不会读取或保存你的网易云凭据。</p>
+            <div class="stack">
+              <button type="button" id="netease-install" class="secondary">安装/更新依赖</button>
+              <button type="button" id="netease-configure" class="secondary">配置并登录</button>
+              <button type="button" id="netease-tui" class="secondary">打开官方终端播放器</button>
+            </div>
+          </div>
+
+          <div id="qq-settings" class="hidden">
+            <p class="help">Key 来自 QQ 音乐官方 Skills 页面，只会以 Windows 当前用户 DPAPI 加密保存。</p>
+            <label class="field">QQMUSIC API Key
+              <input id="qq-key" type="password" placeholder="qmk-…" autocomplete="off" />
+            </label>
+            <div class="stack">
+              <button type="button" id="qq-save" class="primary">安全保存并检测</button>
+              <button type="button" id="qq-key-page" class="secondary">打开官方 Key 页面</button>
+              <button type="button" id="qq-clear" class="danger">清除本机 Key</button>
+            </div>
+          </div>
+          <p id="settings-message" class="help" aria-live="polite"></p>
+        </form>
+      </dialog>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>
