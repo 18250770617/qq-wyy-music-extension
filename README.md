@@ -56,7 +56,11 @@ API 凭证申请入口：<https://developer.music.163.com/st/developer/apply/acc
 
 Windows 上通过 winget 安装的 mpv 有时不会自动加入 PATH；安装助手会补齐当前用户 PATH，桥接程序也会识别默认的 `C:\Program Files\MPV Player\mpv.exe`。若安装时 Edge 已经打开，请重启 Edge 后再检测。
 
-`ncm-cli 0.1.7` 在 Windows 上的控制命令偶尔会先超时、随后才开始播放。0.2.0 仍由官方 CLI 完成鉴权、搜索、取流和歌单队列，但暂停、继续、停止和音量会直接连接 CLI 创建的 `ncm-mpv` 本地管道，避免播放已经出声后控制状态丢失。扩展不会读取或接收播放 URL。
+`ncm-cli 0.1.7` 在 Windows 上的控制命令偶尔会先超时、随后才开始播放。0.3.0 仍由官方 CLI 完成鉴权、搜索、取流和歌单队列，但暂停、继续、停止、音量和播放进度会直接连接 CLI 创建的 `ncm-mpv` 本地管道，避免播放已经出声后控制状态丢失。扩展不会读取或接收播放 URL。
+
+### 网页悬浮播放器
+
+在普通网页中打开扩展，点击“在当前网站启用悬浮球”。悬浮球可以拖动并自动吸附左右边缘；单击会展开上一首、播放/暂停、下一首快捷操作，再点击末端按钮可打开完整播放器。完整播放器包含实时进度圆环、动态频谱、唱片动画、进度拖动、音量以及歌曲/歌单搜索。授权按网站保存，扩展不会读取网页正文；Edge 设置页、扩展页等内部页面不能注入。
 
 ## 连接 QQ 音乐
 
@@ -84,7 +88,7 @@ Windows 上通过 winget 安装的 mpv 有时不会自动加入 PATH；安装助
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\Package.ps1
 ```
 
-桌面会生成 `CloudMusicEdge-v0.2.0.zip`。压缩包不包含 QQ Key、网易云凭据或登录态。另一台 Windows 电脑解压后重新运行 `安装.cmd`，再分别完成账号授权即可。
+桌面会生成 `CloudMusicEdge-v0.3.0.zip`。压缩包不包含 QQ Key、网易云凭据或登录态。另一台 Windows 电脑解压后重新运行 `安装.cmd`，再分别完成账号授权即可。
 
 ## 安全设计
 

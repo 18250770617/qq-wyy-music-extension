@@ -30,6 +30,8 @@ if (Get-Command node -ErrorAction SilentlyContinue) {
     if ($LASTEXITCODE -ne 0) { throw '前端安全边界检查失败。' }
     node (Join-Path $projectRoot 'tests\netease-response-contract.js')
     if ($LASTEXITCODE -ne 0) { throw '网易云官方返回结构适配检查失败。' }
+    node (Join-Path $projectRoot 'tests\floating-ui-contract.js')
+    if ($LASTEXITCODE -ne 0) { throw '悬浮播放器交互契约检查失败。' }
 } else { Write-Host '未找到 Node.js，跳过 JavaScript 语法和协议冒烟测试。' -ForegroundColor Yellow }
 
 $forbidden = Select-String -Path (Join-Path $projectRoot 'extension\*') -Pattern 'weapi|eapi|document\.cookie|webRequest' -ErrorAction SilentlyContinue

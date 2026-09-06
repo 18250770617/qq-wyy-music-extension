@@ -1,4 +1,42 @@
 const SCRIPT_ID = "cloudmusic-floating-sites";
+let nativePort;
+const nativePending = new Map();
+
+function failNativePending(message) {
+  for (const pending of nativePending.values()) pending.reject(new Error(message));
+  nativePending.clear();
+}
+
+function connectNative() {
+  if (nativePort) return nativePort;
+  nativePort = chrome.runtime.connectNative("com.cloudmusic.edge.bridge");
+  nativePort.onMessage.addListener((response) => {
+    const pending = nativePending.get(response?.id);
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    nativePending.delete(response.id);
+    pending.resolve(response);
+  });
+  nativePort.onDisconnect.addListener(() => {
+    const error = chrome.runtime.lastError?.message || "本地桥接已断开";
+    nativePort = undefined;
+    failNativePending(error);
+  });
+  return nativePort;
+}
+
+function sendNative(action, payload) {
+  return new Promise((resolve, reject) => {
+    const id = crypto.randomUUID();
+    const timer = setTimeout(() => {
+      nativePending.delete(id);
+      reject(new Error("本地桥接响应超时"));
+    }, 30000);
+    nativePending.set(id, { resolve, reject, timer });
+    try { connectNative().postMessage({ id, action, payload: payload || {} }); }
+    catch (error) { clearTimeout(timer); nativePending.delete(id); reject(error); }
+  });
+}
 
 async function syncContentScript() {
   const { floatingSites = [] } = await chrome.storage.local.get({ floatingSites: [] });
@@ -18,9 +56,7 @@ chrome.runtime.onStartup.addListener(syncContentScript);
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type === "native") {
-    chrome.runtime.sendNativeMessage("com.cloudmusic.edge.bridge", {
-      id: crypto.randomUUID(), action: message.action, payload: message.payload || {}
-    }).then((response) => sendResponse(response)).catch((error) => sendResponse({ ok: false, error: error.message }));
+    sendNative(message.action, message.payload).then((response) => sendResponse(response)).catch((error) => sendResponse({ ok: false, error: error.message }));
     return true;
   }
 

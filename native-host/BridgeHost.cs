@@ -18,7 +18,7 @@ namespace CloudMusicEdge
 {
     internal static class BridgeHost
     {
-        private const string Version = "0.2.0";
+        private const string Version = "0.3.0";
         private const string QqBaseUrl = "https://a.y.qq.com";
         private const string QqSkillVersion = "0.0.3";
         private static readonly JavaScriptSerializer Json = new JavaScriptSerializer { MaxJsonLength = 8 * 1024 * 1024 };
@@ -269,13 +269,22 @@ namespace CloudMusicEdge
                     state["status"] = "playing"; SavePlayerState(state); return ManagedStateResult(state, "继续播放");
                 case "stop":
                     RunNcm(new[] { "stop" }, 12000);
-                    state["status"] = "stopped"; SavePlayerState(state); return ManagedStateResult(state, "已停止播放");
+                    state["status"] = "stopped"; state["position"] = 0; SavePlayerState(state); return ManagedStateResult(state, "已停止播放");
                 case "next": return MoveManagedTrack(state, 1);
                 case "prev": return MoveManagedTrack(state, -1);
                 case "state":
-                    bool? paused = GetMpvPaused();
+                    object pausedValue = GetMpvProperty("pause");
+                    bool? paused = pausedValue is bool ? (bool?)pausedValue : null;
                     state["status"] = !paused.HasValue ? "stopped" : paused.Value ? "paused" : "playing";
+                    object position = GetMpvProperty("time-pos");
+                    object duration = GetMpvProperty("duration");
+                    state["position"] = position ?? 0;
+                    state["duration"] = duration ?? 0;
                     SavePlayerState(state); return ManagedStateResult(state, "状态已刷新");
+                case "seek":
+                    int seek = GetInt(payload, "value", 0, 86400);
+                    SendMpv(new object[] { "set_property", "time-pos", seek });
+                    state["position"] = seek; SavePlayerState(state); return ManagedStateResult(state, "播放进度已调整");
                 case "volume":
                     int volume = GetInt(payload, "value", 0, 100);
                     SendMpv(new object[] { "set_property", "volume", volume });
@@ -419,14 +428,14 @@ namespace CloudMusicEdge
             catch { return false; }
         }
 
-        private static bool? GetMpvPaused()
+        private static object GetMpvProperty(string name)
         {
             try
             {
                 using (var pipe = new NamedPipeClientStream(".", PlayerPipeName, PipeDirection.InOut))
                 {
                     pipe.Connect(800);
-                    byte[] message = Encoding.UTF8.GetBytes(Json.Serialize(Map("command", new object[] { "get_property", "pause" })) + "\n");
+                    byte[] message = Encoding.UTF8.GetBytes(Json.Serialize(Map("command", new object[] { "get_property", name })) + "\n");
                     pipe.Write(message, 0, message.Length);
                     pipe.Flush();
                     using (var reader = new StreamReader(pipe, Encoding.UTF8, false, 1024, true))
@@ -436,8 +445,8 @@ namespace CloudMusicEdge
                         var response = Json.DeserializeObject(pending.Result) as Dictionary<string, object>;
                         object data;
                         if (response == null || !String.Equals(Value(response, "error"), "success", StringComparison.OrdinalIgnoreCase) ||
-                            !response.TryGetValue("data", out data) || !(data is bool)) return null;
-                        return (bool)data;
+                            !response.TryGetValue("data", out data)) return null;
+                        return data;
                     }
                 }
             }
@@ -451,7 +460,7 @@ namespace CloudMusicEdge
 
         private static bool IsMpvReady()
         {
-            return GetMpvPaused().HasValue;
+            return GetMpvProperty("pause") is bool;
         }
 
         private static object ManagedStateResult(Dictionary<string, object> state, string message)
@@ -460,7 +469,9 @@ namespace CloudMusicEdge
             var queue = state.TryGetValue("queue", out rawQueue) ? rawQueue as ICollection : null;
             var view = Map("status", Value(state, "status", "stopped"), "currentIndex", Convert.ToInt32(Value(state, "currentIndex", "0")),
                 "queueLength", queue == null ? 0 : queue.Count, "volume", Convert.ToInt32(Value(state, "volume", "50")),
-                "title", Value(state, "title"), "meta", Value(state, "meta"));
+                "title", Value(state, "title"), "meta", Value(state, "meta"),
+                "position", state.ContainsKey("position") ? state["position"] : 0,
+                "duration", state.ContainsKey("duration") ? state["duration"] : 0);
             var payload = Map("success", true, "message", message, "state", view);
             return Map("stdout", Json.Serialize(payload), "payload", payload, "exitCode", 0, "managedPlayer", true);
         }
