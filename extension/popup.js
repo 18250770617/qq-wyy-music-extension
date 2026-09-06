@@ -4,6 +4,8 @@ let searchType = "song";
 let port;
 let sequence = 0;
 const pending = new Map();
+const searchCache = new Map();
+const latestSearchRequest = new Map();
 
 const $ = (id) => document.getElementById(id);
 
@@ -71,6 +73,7 @@ async function refreshConnection() {
 }
 
 function setProvider(next) {
+  rememberSearchScroll();
   provider = next;
   chrome.storage.local.set({ provider });
   document.querySelectorAll(".provider").forEach((button) => button.classList.toggle("active", button.dataset.provider === provider));
@@ -78,8 +81,25 @@ function setProvider(next) {
   $("settings-title").textContent = provider === "netease" ? "网易云音乐" : "QQ 音乐";
   $("netease-settings").classList.toggle("hidden", provider !== "netease");
   $("qq-settings").classList.toggle("hidden", provider !== "qq");
-  $("results").innerHTML = '<div class="empty"><span>♫</span><p>搜索想听的歌曲或歌单</p></div>';
+  restoreSearchResults();
   refreshConnection();
+}
+
+function searchCacheKey(sourceProvider = provider, type = searchType) { return `${sourceProvider}:${type}`; }
+function rememberSearchScroll() {
+  const entry = searchCache.get(searchCacheKey());
+  if (entry) entry.scrollTop = $("results").scrollTop;
+}
+function restoreSearchResults() {
+  const entry = searchCache.get(searchCacheKey());
+  $("keyword").value = entry?.keyword || "";
+  if (entry) {
+    renderResults(entry.items, entry.rawFallback);
+    $("results").scrollTop = entry.scrollTop || 0;
+  } else {
+    $("results").innerHTML = '<div class="empty"><span>♫</span><p>搜索结果会按平台和分类保留</p></div>';
+  }
+  $("search").disabled = false;
 }
 
 function collectArrays(value, output = []) {
@@ -101,6 +121,7 @@ function normalizeNetease(data, type) {
     const originalId = item.originalId || item.original_id || item.originId || item.rawId;
     const artists = item.artists || item.fullArtists || [];
     return {
+      provider: "netease",
       kind: type,
       title: item.name || item.songName || item.playlistName || item.title || "未命名",
       meta: item.artistName || item.singerName || artists.map((artist) => artist?.name).filter(Boolean).join(" / ") || item.creatorName || item.description || "网易云音乐",
@@ -114,6 +135,7 @@ function normalizeNetease(data, type) {
 function normalizeQQ(data, type) {
   const items = type === "song" ? (data.songs || data.songlist || data.trackList || []) : (data.playlists || []);
   return items.map((item) => ({
+    provider: "qq",
     kind: type,
     title: item.songName || item.dissName || "未命名",
     meta: item.singerName || item.creatorName || item.dissDesc || "QQ 音乐",
@@ -155,23 +177,31 @@ function renderResults(items, rawFallback) {
 async function runSearch() {
   const keyword = $("keyword").value.trim();
   if (!keyword) return showNotice("请先输入搜索关键词", true);
+  const requestedProvider = provider;
+  const requestedType = searchType;
+  const requestedKey = searchCacheKey(requestedProvider, requestedType);
+  const requestId = (latestSearchRequest.get(requestedKey) || 0) + 1;
+  latestSearchRequest.set(requestedKey, requestId);
   showNotice("正在搜索…");
   $("search").disabled = true;
   try {
-    const data = await send(`${provider}.search`, { keyword, type: searchType });
-    const items = provider === "netease" ? normalizeNetease(data, searchType) : normalizeQQ(data, searchType);
+    const data = await send(`${requestedProvider}.search`, { keyword, type: requestedType });
+    if (latestSearchRequest.get(requestedKey) !== requestId) return;
+    const items = requestedProvider === "netease" ? normalizeNetease(data, requestedType) : normalizeQQ(data, requestedType);
+    searchCache.set(requestedKey, { keyword, items, rawFallback: data.stdout, scrollTop: 0 });
+    if (searchCacheKey() !== requestedKey) return;
     renderResults(items, data.stdout);
     showNotice(items.length ? `找到 ${items.length} 项结果` : "没有可显示的结果");
   } catch (error) {
-    showNotice(error.message, true);
+    if (latestSearchRequest.get(requestedKey) === requestId && searchCacheKey() === requestedKey) showNotice(error.message, true);
   } finally {
-    $("search").disabled = false;
+    if (latestSearchRequest.get(requestedKey) === requestId && searchCacheKey() === requestedKey) $("search").disabled = false;
   }
 }
 
 async function activateResult(item) {
   try {
-    if (provider === "qq") {
+    if (item.provider === "qq") {
       if (item.kind === "playlist") {
         showNotice("正在读取歌单…");
         const data = await send("qq.playlistDetail", { playlistId: item.playlistId, page: 0 });
@@ -213,8 +243,10 @@ async function control(name, value) {
 
 document.querySelectorAll(".provider").forEach((button) => button.addEventListener("click", () => setProvider(button.dataset.provider)));
 document.querySelectorAll(".type").forEach((button) => button.addEventListener("click", () => {
+  rememberSearchScroll();
   searchType = button.dataset.type;
   document.querySelectorAll(".type").forEach((item) => item.classList.toggle("active", item === button));
+  restoreSearchResults();
 }));
 document.querySelectorAll("[data-control]").forEach((button) => button.addEventListener("click", () => control(button.dataset.control)));
 $("volume").addEventListener("change", (event) => control("volume", Number(event.target.value)));

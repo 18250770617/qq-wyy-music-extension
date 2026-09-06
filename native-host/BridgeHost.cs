@@ -18,7 +18,7 @@ namespace CloudMusicEdge
 {
     internal static class BridgeHost
     {
-        private const string Version = "0.3.0";
+        private const string Version = "0.4.0";
         private const string QqBaseUrl = "https://a.y.qq.com";
         private const string QqSkillVersion = "0.0.3";
         private static readonly JavaScriptSerializer Json = new JavaScriptSerializer { MaxJsonLength = 8 * 1024 * 1024 };
@@ -106,6 +106,7 @@ namespace CloudMusicEdge
                 case "netease.play": return NeteasePlay(payload);
                 case "netease.playPlaylist": return NeteasePlayPlaylist(payload);
                 case "netease.playlistTracks": return NeteasePlaylistTracks(payload);
+                case "netease.library": return NeteaseLibrary(payload);
                 case "netease.queueAdd": return NeteaseQueueAdd(payload);
                 case "netease.control": return NeteaseControl(payload);
                 case "netease.launchSetup": return LaunchNetease(payload);
@@ -201,7 +202,26 @@ namespace CloudMusicEdge
         private static object NeteasePlaylistTracks(Dictionary<string, object> payload)
         {
             string id = RequireEncryptedId(payload, "playlistId");
-            return RunNcm(new[] { "playlist", "tracks", "--playlistId", id, "--userInput", "在 CloudMusic Edge 中读取歌单" }, 30000);
+            int limit = GetOptionalInt(payload, "limit", 100, 1, 100);
+            int offset = GetOptionalInt(payload, "offset", 0, 0, 10000);
+            return RunNcm(new[] { "playlist", "tracks", "--playlistId", id, "--limit", Number(limit), "--offset", Number(offset), "--userInput", "在 CloudMusic Edge 中读取歌单" }, 30000);
+        }
+
+        private static object NeteaseLibrary(Dictionary<string, object> payload)
+        {
+            string kind = GetString(payload, "kind", 20, true);
+            switch (kind)
+            {
+                case "favorite":
+                    return RunNcm(new[] { "user", "favorite", "--userInput", "在 CloudMusic Edge 中获取喜欢的音乐" }, 30000);
+                case "created":
+                case "collected":
+                    int limit = GetOptionalInt(payload, "limit", 50, 1, 100);
+                    int offset = GetOptionalInt(payload, "offset", 0, 0, 10000);
+                    return RunNcm(new[] { "playlist", kind, "--limit", Number(limit), "--offset", Number(offset), "--userInput", "在 CloudMusic Edge 中获取个人歌单" }, 30000);
+                default:
+                    throw new UserError("不支持的个人库类型");
+            }
         }
 
         private static object NeteasePlay(Dictionary<string, object> payload)
@@ -755,6 +775,16 @@ namespace CloudMusicEdge
             if (!map.TryGetValue(name, out raw) || !Int32.TryParse(Convert.ToString(raw), out value) || value < min || value > max)
                 throw new UserError("参数范围无效：" + name);
             return value;
+        }
+
+        private static int GetOptionalInt(Dictionary<string, object> map, string name, int fallback, int min, int max)
+        {
+            return map.ContainsKey(name) ? GetInt(map, name, min, max) : fallback;
+        }
+
+        private static string Number(int value)
+        {
+            return value.ToString(System.Globalization.CultureInfo.InvariantCulture);
         }
 
         private static long GetLong(Dictionary<string, object> map, string name, long min, long max)
