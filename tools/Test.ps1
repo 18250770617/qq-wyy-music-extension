@@ -32,6 +32,8 @@ if (Get-Command node -ErrorAction SilentlyContinue) {
     if ($LASTEXITCODE -ne 0) { throw '网易云官方返回结构适配检查失败。' }
     node (Join-Path $projectRoot 'tests\netease-library-contract.js')
     if ($LASTEXITCODE -ne 0) { throw '网易云个人库协议检查失败。' }
+    node (Join-Path $projectRoot 'tests\netease-visualizer-contract.js')
+    if ($LASTEXITCODE -ne 0) { throw '网易云实时频段协议检查失败。' }
     node (Join-Path $projectRoot 'tests\floating-ui-contract.js')
     if ($LASTEXITCODE -ne 0) { throw '悬浮播放器交互契约检查失败。' }
 } else { Write-Host '未找到 Node.js，跳过 JavaScript 语法和协议冒烟测试。' -ForegroundColor Yellow }

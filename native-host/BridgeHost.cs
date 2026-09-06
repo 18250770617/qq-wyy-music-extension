@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.IO.Pipes;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -18,7 +19,7 @@ namespace CloudMusicEdge
 {
     internal static class BridgeHost
     {
-        private const string Version = "0.4.0";
+        private const string Version = "0.5.0";
         private const string QqBaseUrl = "https://a.y.qq.com";
         private const string QqSkillVersion = "0.0.3";
         private static readonly JavaScriptSerializer Json = new JavaScriptSerializer { MaxJsonLength = 8 * 1024 * 1024 };
@@ -26,7 +27,31 @@ namespace CloudMusicEdge
         private static readonly string QqKeyFile = Path.Combine(AppData, "qq.key");
         private static readonly string PlayerStateFile = Path.Combine(AppData, "netease-player.json");
         private static readonly Mutex PlayerStateLock = new Mutex(false, "Local\\CloudMusicEdge.PlayerState");
+        private static readonly object VisualizerSync = new object();
+        private static readonly Dictionary<string, DateTime> VisualizerClients = new Dictionary<string, DateTime>(StringComparer.Ordinal);
+        private static readonly Timer VisualizerWatchdog = new Timer(ReapVisualizerClients, null, 2000, 2000);
+        private static int HostRequestInFlight;
+        private static int VisualizerReaperRunning;
+        private static bool VisualizerOwned;
         private const string PlayerPipeName = "ncm-mpv";
+        private const int VisualizerLeaseSeconds = 15;
+        private const string VisualizerLabelPrefix = "cloudmusic-bands-";
+        private static readonly string VisualizerLabel = VisualizerLabelPrefix + Process.GetCurrentProcess().Id.ToString(CultureInfo.InvariantCulture);
+        private const string VisualizerGraph =
+            "aformat=sample_fmts=fltp:channel_layouts=stereo,asplit=11[main][b0][b1][b2][b3][b4][b5][b6][b7][b8][b9];" +
+            "[b0]pan=mono|c0=0.5*c0+0.5*c1,bandpass=f=31:t=o:w=1.4[b0o];" +
+            "[b1]pan=mono|c0=0.5*c0+0.5*c1,bandpass=f=63:t=o:w=1.4[b1o];" +
+            "[b2]pan=mono|c0=0.5*c0+0.5*c1,bandpass=f=125:t=o:w=1.4[b2o];" +
+            "[b3]pan=mono|c0=0.5*c0+0.5*c1,bandpass=f=250:t=o:w=1.4[b3o];" +
+            "[b4]pan=mono|c0=0.5*c0+0.5*c1,bandpass=f=500:t=o:w=1.4[b4o];" +
+            "[b5]pan=mono|c0=0.5*c0+0.5*c1,bandpass=f=1000:t=o:w=1.4[b5o];" +
+            "[b6]pan=mono|c0=0.5*c0+0.5*c1,bandpass=f=2000:t=o:w=1.4[b6o];" +
+            "[b7]pan=mono|c0=0.5*c0+0.5*c1,bandpass=f=4000:t=o:w=1.4[b7o];" +
+            "[b8]pan=mono|c0=0.5*c0+0.5*c1,bandpass=f=8000:t=o:w=1.4[b8o];" +
+            "[b9]pan=mono|c0=0.5*c0+0.5*c1,bandpass=f=16000:t=o:w=1.4[b9o];" +
+            "[main][b0o][b1o][b2o][b3o][b4o][b5o][b6o][b7o][b8o][b9o]" +
+            "join=inputs=11:channel_layout=7.1.4:map=0.0-FL|0.1-FR|1.0-FC|2.0-LFE|3.0-BL|4.0-BR|5.0-SL|6.0-SR|7.0-TFL|8.0-TFR|9.0-TBL|10.0-TBR," +
+            "astats=metadata=1:reset=1:measure_overall=none:measure_perchannel=RMS_level,pan=stereo|c0=FL|c1=FR";
         private static readonly string BaseDirectory = AppDomain.CurrentDomain.BaseDirectory;
         private static readonly Regex EncryptedId = new Regex("^[a-fA-F0-9]{32}$", RegexOptions.Compiled);
         private static readonly Regex NumericId = new Regex("^[0-9]{1,20}$", RegexOptions.Compiled);
@@ -67,26 +92,37 @@ namespace CloudMusicEdge
                     if (frame == null) return 0;
                     Dictionary<string, object> response;
                     string id = null;
+                    DateTime requestStartedUtc = DateTime.UtcNow;
+                    Interlocked.Exchange(ref HostRequestInFlight, 1);
                     try
                     {
-                        var request = Json.DeserializeObject(Encoding.UTF8.GetString(frame)) as Dictionary<string, object>;
-                        if (request == null) throw new UserError("请求格式无效");
-                        id = GetString(request, "id", 128, false);
-                        response = Success(id, Dispatch(request));
+                        try
+                        {
+                            var request = Json.DeserializeObject(Encoding.UTF8.GetString(frame)) as Dictionary<string, object>;
+                            if (request == null) throw new UserError("请求格式无效");
+                            id = GetString(request, "id", 128, false);
+                            response = Success(id, Dispatch(request));
+                        }
+                        catch (UserError error)
+                        {
+                            response = Failure(id, error.Message);
+                        }
+                        catch (Exception error)
+                        {
+                            response = Failure(id, "本地桥接执行失败：" + SafeMessage(error.Message));
+                        }
+                        WriteFrame(output, Encoding.UTF8.GetBytes(Json.Serialize(response)));
                     }
-                    catch (UserError error)
+                    finally
                     {
-                        response = Failure(id, error.Message);
+                        ExtendVisualizerLeases(DateTime.UtcNow - requestStartedUtc);
+                        Interlocked.Exchange(ref HostRequestInFlight, 0);
                     }
-                    catch (Exception error)
-                    {
-                        response = Failure(id, "本地桥接执行失败：" + SafeMessage(error.Message));
-                    }
-                    WriteFrame(output, Encoding.UTF8.GetBytes(Json.Serialize(response)));
                 }
             }
             catch (EndOfStreamException) { return 0; }
             catch (IOException) { return 0; }
+            finally { VisualizerWatchdog.Dispose(); StopOwnedVisualizer(); }
         }
 
         private static object Dispatch(Dictionary<string, object> request)
@@ -109,6 +145,7 @@ namespace CloudMusicEdge
                 case "netease.library": return NeteaseLibrary(payload);
                 case "netease.queueAdd": return NeteaseQueueAdd(payload);
                 case "netease.control": return NeteaseControl(payload);
+                case "netease.visualizer": return NeteaseVisualizer(payload);
                 case "netease.launchSetup": return LaunchNetease(payload);
                 case "qq.search": return QqSearch(payload);
                 case "qq.playlistDetail": return QqPlaylistDetail(payload);
@@ -313,6 +350,315 @@ namespace CloudMusicEdge
             }
         }
 
+        private enum MpvFilterState
+        {
+            Unknown,
+            Missing,
+            Disabled,
+            Enabled
+        }
+
+        private static object NeteaseVisualizer(Dictionary<string, object> payload)
+        {
+            string mode = GetString(payload, "mode", 12, true);
+            switch (mode)
+            {
+                case "start":
+                    string startClient = RequireVisualizerClient(payload);
+                    lock (VisualizerSync) VisualizerClients[startClient] = DateTime.UtcNow;
+                    CleanupStaleVisualizerFilters();
+                    string startReason;
+                    if (!IsVisualizerFormatSupported(out startReason))
+                    {
+                        lock (VisualizerSync) VisualizerClients.Remove(startClient);
+                        return Map("available", false, "attached", false, "reason", startReason, "bands", new double[0]);
+                    }
+
+                    MpvFilterState startFilter = ObserveMpvAudioFilterState(VisualizerLabel, 3);
+                    if (startFilter == MpvFilterState.Unknown)
+                    {
+                        lock (VisualizerSync) VisualizerClients.Remove(startClient);
+                        return Map("available", false, "attached", false, "reason", "播放器滤镜状态暂不可读", "bands", new double[0]);
+                    }
+                    if (startFilter == MpvFilterState.Disabled)
+                    {
+                        lock (VisualizerSync) VisualizerOwned = true;
+                        if (!TryRemoveVisualizerFilter(3))
+                        {
+                            lock (VisualizerSync) VisualizerClients.Remove(startClient);
+                            return Map("available", false, "attached", true, "reason", "旧频段滤镜无法安全替换", "bands", new double[0]);
+                        }
+                        startFilter = MpvFilterState.Missing;
+                    }
+                    if (startFilter == MpvFilterState.Missing)
+                    {
+                        // A timed-out IPC reply is ambiguous: mpv may still have applied the command.
+                        // Claim ownership before sending, then verify the actual filter state and roll back safely.
+                        lock (VisualizerSync) VisualizerOwned = true;
+                        TrySendMpv(new object[] { "af", "add", "@" + VisualizerLabel + ":lavfi=[" + VisualizerGraph + "]" });
+                        startFilter = ObserveMpvAudioFilterState(VisualizerLabel, 5);
+                        if (startFilter != MpvFilterState.Enabled)
+                        {
+                            bool removed = TryRemoveVisualizerFilter(4);
+                            lock (VisualizerSync)
+                            {
+                                VisualizerClients.Remove(startClient);
+                                if (VisualizerClients.Count == 0) VisualizerOwned = !removed;
+                            }
+                            return Map("available", false, "attached", !removed,
+                                "reason", startFilter == MpvFilterState.Disabled ? "实时频段滤镜未能启用" : "当前播放器不支持实时频段",
+                                "bands", new double[0]);
+                        }
+                    }
+
+                    Dictionary<string, object> metadata = null;
+                    double[] startBands = null;
+                    for (int attempt = 0; attempt < 10 && startBands == null; attempt++)
+                    {
+                        if (attempt > 0) Thread.Sleep(40);
+                        metadata = GetMpvProperty("af-metadata/" + VisualizerLabel) as Dictionary<string, object>;
+                        double[] parsed;
+                        if (metadata != null && TryParseVisualizerBands(metadata, out parsed)) startBands = parsed;
+                    }
+                    if (startBands == null)
+                    {
+                        lock (VisualizerSync)
+                        {
+                            VisualizerClients.Remove(startClient);
+                            if (VisualizerClients.Count == 0) VisualizerOwned = !TryRemoveVisualizerFilter(3);
+                        }
+                        return Map("available", false, "attached", false, "reason", "实时频段数据尚未就绪", "bands", new double[0]);
+                    }
+                    lock (VisualizerSync) VisualizerOwned = true;
+                    return VisualizerBands(startBands);
+                case "read":
+                    string readClient = RequireVisualizerClient(payload);
+                    lock (VisualizerSync)
+                    {
+                        if (!VisualizerClients.ContainsKey(readClient)) return Map("available", false, "attached", false, "bands", new double[0]);
+                        VisualizerClients[readClient] = DateTime.UtcNow;
+                    }
+                    string readReason;
+                    if (!IsVisualizerFormatSupported(out readReason)) return DisableVisualizer(readReason);
+                    return ReadVisualizerBands();
+                case "stop":
+                    string stopClient = RequireVisualizerClient(payload);
+                    bool stopped = true;
+                    int activeClients;
+                    lock (VisualizerSync)
+                    {
+                        VisualizerClients.Remove(stopClient);
+                        activeClients = VisualizerClients.Count;
+                        if (activeClients == 0)
+                        {
+                            stopped = TryRemoveVisualizerFilter(3);
+                            VisualizerOwned = !stopped;
+                        }
+                    }
+                    return Map("available", false, "stopped", stopped, "activeClients", activeClients);
+                default:
+                    throw new UserError("不支持的频谱操作");
+            }
+        }
+
+        private static string RequireVisualizerClient(Dictionary<string, object> payload)
+        {
+            string clientId = GetString(payload, "clientId", 64, true);
+            Guid parsed;
+            if (!Guid.TryParse(clientId, out parsed)) throw new UserError("频谱客户端标识无效");
+            return parsed.ToString("D");
+        }
+
+        private static bool IsVisualizerFormatSupported(out string reason)
+        {
+            reason = "";
+            var parameters = GetMpvProperty("audio-params") as Dictionary<string, object>;
+            int channelCount;
+            int sampleRate;
+            if (parameters == null || !Int32.TryParse(Value(parameters, "channel-count"), out channelCount) || channelCount < 1 ||
+                !Int32.TryParse(Value(parameters, "samplerate"), out sampleRate) || sampleRate < 1)
+            {
+                reason = "音频参数尚未就绪";
+                return false;
+            }
+            if (channelCount > 2)
+            {
+                reason = "多声道音频已使用兼容动画";
+                return false;
+            }
+            if (sampleRate < 36000)
+            {
+                reason = "低采样率音频已使用兼容动画";
+                return false;
+            }
+            return true;
+        }
+
+        private static MpvFilterState GetMpvAudioFilterState(string label)
+        {
+            var filters = GetMpvProperty("af") as IEnumerable;
+            if (filters == null) return MpvFilterState.Unknown;
+            foreach (object raw in filters)
+            {
+                var filter = raw as Dictionary<string, object>;
+                if (!String.Equals(Value(filter, "label"), label, StringComparison.Ordinal)) continue;
+                object enabled;
+                if (filter != null && filter.TryGetValue("enabled", out enabled) && enabled is bool && !(bool)enabled) return MpvFilterState.Disabled;
+                return MpvFilterState.Enabled;
+            }
+            return MpvFilterState.Missing;
+        }
+
+        private static MpvFilterState ObserveMpvAudioFilterState(string label, int attempts)
+        {
+            MpvFilterState state = MpvFilterState.Unknown;
+            for (int attempt = 0; attempt < attempts; attempt++)
+            {
+                state = GetMpvAudioFilterState(label);
+                if (state == MpvFilterState.Enabled || state == MpvFilterState.Disabled) return state;
+                if (attempt + 1 < attempts) Thread.Sleep(35);
+            }
+            return state;
+        }
+
+        private static void CleanupStaleVisualizerFilters()
+        {
+            var filters = GetMpvProperty("af") as IEnumerable;
+            if (filters == null) return;
+            var staleLabels = new List<string>();
+            foreach (object raw in filters)
+            {
+                var filter = raw as Dictionary<string, object>;
+                string label = Value(filter, "label");
+                if (!label.StartsWith(VisualizerLabelPrefix, StringComparison.Ordinal) || String.Equals(label, VisualizerLabel, StringComparison.Ordinal)) continue;
+                string suffix = label.Substring(VisualizerLabelPrefix.Length);
+                int processId;
+                if (Int32.TryParse(suffix, NumberStyles.None, CultureInfo.InvariantCulture, out processId) && !IsVisualizerHostAlive(processId)) staleLabels.Add(label);
+            }
+            foreach (string label in staleLabels) TryRemoveMpvAudioFilter(label, 2);
+        }
+
+        private static bool IsVisualizerHostAlive(int processId)
+        {
+            try
+            {
+                using (Process process = Process.GetProcessById(processId))
+                    return !process.HasExited && String.Equals(process.ProcessName, "CloudMusicBridge", StringComparison.OrdinalIgnoreCase);
+            }
+            catch (ArgumentException) { return false; }
+            catch { return true; }
+        }
+
+        private static bool TryRemoveVisualizerFilter(int attempts)
+        {
+            return TryRemoveMpvAudioFilter(VisualizerLabel, attempts);
+        }
+
+        private static bool TryRemoveMpvAudioFilter(string label, int attempts)
+        {
+            for (int attempt = 0; attempt < attempts; attempt++)
+            {
+                MpvFilterState state = GetMpvAudioFilterState(label);
+                if (state == MpvFilterState.Missing) return true;
+                if (state == MpvFilterState.Enabled || state == MpvFilterState.Disabled)
+                {
+                    // Verify state even when the reply times out: timeout does not mean mpv rejected the command.
+                    TrySendMpv(new object[] { "af", "remove", "@" + label });
+                    Thread.Sleep(20);
+                    if (GetMpvAudioFilterState(label) == MpvFilterState.Missing) return true;
+                }
+                Thread.Sleep(40);
+            }
+            return GetMpvAudioFilterState(label) == MpvFilterState.Missing;
+        }
+
+        private static object DisableVisualizer(string reason)
+        {
+            bool stopped;
+            lock (VisualizerSync)
+            {
+                VisualizerClients.Clear();
+                stopped = TryRemoveVisualizerFilter(3);
+                VisualizerOwned = !stopped;
+            }
+            return Map("available", false, "attached", !stopped, "reason", reason, "bands", new double[0]);
+        }
+
+        private static void ReapVisualizerClients(object state)
+        {
+            if (Interlocked.Exchange(ref VisualizerReaperRunning, 1) != 0) return;
+            try
+            {
+                if (Interlocked.CompareExchange(ref HostRequestInFlight, 0, 0) != 0) return;
+                lock (VisualizerSync)
+                {
+                    if (Interlocked.CompareExchange(ref HostRequestInFlight, 0, 0) != 0) return;
+                    DateTime oldest = DateTime.UtcNow.AddSeconds(-VisualizerLeaseSeconds);
+                    var expired = new List<string>();
+                    foreach (var client in VisualizerClients) if (client.Value < oldest) expired.Add(client.Key);
+                    foreach (string clientId in expired) VisualizerClients.Remove(clientId);
+                    if (VisualizerClients.Count == 0 && VisualizerOwned) VisualizerOwned = !TryRemoveVisualizerFilter(3);
+                }
+            }
+            finally { Interlocked.Exchange(ref VisualizerReaperRunning, 0); }
+        }
+
+        private static void ExtendVisualizerLeases(TimeSpan blockedDuration)
+        {
+            if (blockedDuration <= TimeSpan.Zero) return;
+            lock (VisualizerSync)
+            {
+                if (VisualizerClients.Count == 0) return;
+                foreach (string clientId in new List<string>(VisualizerClients.Keys))
+                    VisualizerClients[clientId] = VisualizerClients[clientId].Add(blockedDuration);
+            }
+        }
+
+        private static void StopOwnedVisualizer()
+        {
+            lock (VisualizerSync)
+            {
+                VisualizerClients.Clear();
+                if (!VisualizerOwned) return;
+                try { VisualizerOwned = !TryRemoveVisualizerFilter(5); }
+                catch { }
+            }
+        }
+
+        private static object ReadVisualizerBands()
+        {
+            var metadata = GetMpvProperty("af-metadata/" + VisualizerLabel) as Dictionary<string, object>;
+            double[] bands;
+            if (metadata == null || !TryParseVisualizerBands(metadata, out bands))
+            {
+                MpvFilterState state = GetMpvAudioFilterState(VisualizerLabel);
+                return Map("available", false, "attached", state == MpvFilterState.Enabled,
+                    "reason", "实时频段数据尚未就绪", "bands", new double[0]);
+            }
+            return VisualizerBands(bands);
+        }
+
+        private static bool TryParseVisualizerBands(Dictionary<string, object> metadata, out double[] bands)
+        {
+            bands = new double[10];
+            for (int i = 0; i < bands.Length; i++)
+            {
+                object rawValue;
+                if (!metadata.TryGetValue("lavfi.astats." + (i + 3) + ".RMS_level", out rawValue) || rawValue == null) return false;
+                string raw = Convert.ToString(rawValue, CultureInfo.InvariantCulture).Trim();
+                double value;
+                if (String.Equals(raw, "-inf", StringComparison.OrdinalIgnoreCase) || String.Equals(raw, "-infinity", StringComparison.OrdinalIgnoreCase)) value = -90;
+                else if (!Double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out value) || Double.IsNaN(value) || Double.IsInfinity(value)) return false;
+                bands[i] = Math.Max(-90, Math.Min(0, value));
+            }
+            return true;
+        }
+
+        private static object VisualizerBands(double[] bands)
+        {
+            return Map("available", true, "attached", true, "frequencies", new[] { 31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 }, "bands", bands);
+        }
+
         private static void PreventChildHandleInheritance()
         {
             int[] handles = new[] { StdInputHandle, StdOutputHandle, StdErrorHandle };
@@ -430,17 +776,18 @@ namespace CloudMusicEdge
         {
             try
             {
+                var ipcJson = new JavaScriptSerializer();
                 using (var pipe = new NamedPipeClientStream(".", PlayerPipeName, PipeDirection.InOut))
                 {
                     pipe.Connect(800);
-                    byte[] message = Encoding.UTF8.GetBytes(Json.Serialize(Map("command", command)) + "\n");
+                    byte[] message = Encoding.UTF8.GetBytes(ipcJson.Serialize(Map("command", command)) + "\n");
                     pipe.Write(message, 0, message.Length);
                     pipe.Flush();
                     using (var reader = new StreamReader(pipe, Encoding.UTF8, false, 1024, true))
                     {
                         var pending = reader.ReadLineAsync();
                         if (!pending.Wait(1500) || String.IsNullOrWhiteSpace(pending.Result)) return false;
-                        var response = Json.DeserializeObject(pending.Result) as Dictionary<string, object>;
+                        var response = ipcJson.DeserializeObject(pending.Result) as Dictionary<string, object>;
                         return response != null && String.Equals(Value(response, "error"), "success", StringComparison.OrdinalIgnoreCase);
                     }
                 }
@@ -452,17 +799,18 @@ namespace CloudMusicEdge
         {
             try
             {
+                var ipcJson = new JavaScriptSerializer();
                 using (var pipe = new NamedPipeClientStream(".", PlayerPipeName, PipeDirection.InOut))
                 {
                     pipe.Connect(800);
-                    byte[] message = Encoding.UTF8.GetBytes(Json.Serialize(Map("command", new object[] { "get_property", name })) + "\n");
+                    byte[] message = Encoding.UTF8.GetBytes(ipcJson.Serialize(Map("command", new object[] { "get_property", name })) + "\n");
                     pipe.Write(message, 0, message.Length);
                     pipe.Flush();
                     using (var reader = new StreamReader(pipe, Encoding.UTF8, false, 1024, true))
                     {
                         var pending = reader.ReadLineAsync();
                         if (!pending.Wait(1500) || String.IsNullOrWhiteSpace(pending.Result)) return null;
-                        var response = Json.DeserializeObject(pending.Result) as Dictionary<string, object>;
+                        var response = ipcJson.DeserializeObject(pending.Result) as Dictionary<string, object>;
                         object data;
                         if (response == null || !String.Equals(Value(response, "error"), "success", StringComparison.OrdinalIgnoreCase) ||
                             !response.TryGetValue("data", out data)) return null;
