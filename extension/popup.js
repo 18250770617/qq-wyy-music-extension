@@ -1,44 +1,19 @@
-const HOST = "com.cloudmusic.edge.bridge";
 let provider = "netease";
 let searchType = "song";
-let port;
-let sequence = 0;
-const pending = new Map();
+let playbackRequestPending = false;
 const searchCache = new Map();
 const latestSearchRequest = new Map();
+const resultIcons = {
+  lock: '<svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>',
+  play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'
+};
 
 const $ = (id) => document.getElementById(id);
 
-function connect() {
-  if (port) return;
-  port = chrome.runtime.connectNative(HOST);
-  port.onMessage.addListener((message) => {
-    const waiter = pending.get(message.id);
-    if (!waiter) return;
-    pending.delete(message.id);
-    message.ok ? waiter.resolve(message.data) : waiter.reject(new Error(message.error || "本地桥接返回错误"));
-  });
-  port.onDisconnect.addListener(() => {
-    const message = chrome.runtime.lastError?.message || "本地桥接已断开";
-    for (const waiter of pending.values()) waiter.reject(new Error(message));
-    pending.clear();
-    port = null;
-    setConnection(false, "本地桥接未连接", "请运行文件夹中的“安装.cmd”");
-  });
-}
-
-function send(action, payload = {}) {
-  connect();
-  return new Promise((resolve, reject) => {
-    const id = `${Date.now()}-${++sequence}`;
-    pending.set(id, { resolve, reject });
-    port.postMessage({ id, action, payload });
-    setTimeout(() => {
-      if (!pending.has(id)) return;
-      pending.delete(id);
-      reject(new Error("操作超时，请重新检测连接"));
-    }, action === "netease.playPlaylist" || action === "netease.play" ? 60000 : 35000);
-  });
+async function send(action, payload = {}) {
+  const response = await chrome.runtime.sendMessage({ type: "native", action, payload });
+  if (!response?.ok) throw new Error(response?.error || "本地桥接返回错误");
+  return response.data;
 }
 
 function setConnection(ok, title, detail) {
@@ -125,6 +100,21 @@ function artistText(item) {
   return Array.isArray(artists) ? artists.map((artist) => typeof artist === "string" ? artist : artist?.name).filter(Boolean).join(" / ") : "";
 }
 
+function availabilityBadge(item) {
+  if (item.provider !== "netease" || item.kind !== "song" || item.availability === "playable") return { label: "›", tone: "arrow", icon: "" };
+  const labels = {
+    copyright: "无版权",
+    vip: "会员限制",
+    digital_album: "需购买",
+    permission: "状态未知",
+    identity: "信息不全",
+    full_trial: "试听",
+    segment_trial: "片段"
+  };
+  if (item.availability === "trial") return { label: labels[item.reasonCode] || "试听", tone: "trial", icon: resultIcons.play };
+  return { label: labels[item.reasonCode] || "不可播放", tone: item.availability === "unknown" ? "unknown" : "blocked", icon: resultIcons.lock };
+}
+
 function normalizeNetease(data, type) {
   let payload = data.payload;
   if (!payload && data.stdout) {
@@ -182,17 +172,29 @@ function renderResults(items, rawFallback) {
     root.querySelector("p").textContent = message;
     return;
   }
+  const fragment = document.createDocumentFragment();
   items.forEach((item, index) => {
     const button = document.createElement("button");
-    button.className = "result";
-    button.innerHTML = `<span class="result-index">${index + 1}</span><span class="grow"><span class="result-title"></span><span class="result-meta"></span></span>`;
+    button.className = `result${item.canPlay === false ? " is-unavailable" : item.availability === "trial" ? " is-trial" : ""}`;
+    if (item.canPlay === false) button.setAttribute("aria-disabled", "true");
+    button.innerHTML = `<span class="result-index">${index + 1}</span><span class="grow"><span class="result-title"></span><span class="result-meta"></span></span><span class="result-status"></span>`;
     button.querySelector(".result-title").textContent = item.title;
-    button.querySelector(".result-meta").textContent = item.kind === "song" && item.availability !== "playable" && item.reasonText ? `${item.meta} · ${item.reasonText}` : item.meta;
-    button.disabled = item.canPlay === false;
-    if (item.canPlay === false) button.title = item.reasonText || "当前不可播放";
-    button.addEventListener("click", () => activateResult(item));
-    root.appendChild(button);
+    button.querySelector(".result-meta").textContent = item.meta;
+    const badge = availabilityBadge(item);
+    const status = button.querySelector(".result-status");
+    status.classList.add(`is-${badge.tone}`);
+    if (badge.icon) status.insertAdjacentHTML("afterbegin", badge.icon);
+    const statusText = document.createElement("span");
+    statusText.textContent = badge.label;
+    status.appendChild(statusText);
+    if (item.canPlay === false) {
+      button.title = item.reasonText || "当前不可播放";
+      button.setAttribute("aria-label", `${item.title}，${item.meta}，不可播放：${item.reasonText || badge.label}`);
+    }
+    button.addEventListener("click", () => activateResult(item, button));
+    fragment.appendChild(button);
   });
+  root.appendChild(fragment);
 }
 
 async function runSearch() {
@@ -220,8 +222,12 @@ async function runSearch() {
   }
 }
 
-async function activateResult(item) {
+async function activateResult(item, trigger) {
   if (item.canPlay === false) return showNotice(item.reasonText || "当前歌曲不可播放", true);
+  if (playbackRequestPending) return showNotice("上一条播放请求正在处理，请稍候");
+  playbackRequestPending = true;
+  trigger?.classList.add("is-loading");
+  trigger?.setAttribute("aria-busy", "true");
   try {
     if (item.provider === "qq") {
       if (item.kind === "playlist") {
@@ -251,6 +257,10 @@ async function activateResult(item) {
     }
   } catch (error) {
     showNotice(error.message, true);
+  } finally {
+    playbackRequestPending = false;
+    trigger?.classList.remove("is-loading");
+    trigger?.removeAttribute("aria-busy");
   }
 }
 

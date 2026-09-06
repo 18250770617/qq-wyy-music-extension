@@ -24,6 +24,14 @@ if (Get-Command node -ErrorAction SilentlyContinue) {
     Get-ChildItem -LiteralPath (Join-Path $projectRoot 'extension') -Filter '*.js' | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { throw "JavaScript 语法错误：$($_.Name)" } }
     node (Join-Path $projectRoot 'tests\native-smoke.js')
     if ($LASTEXITCODE -ne 0) { throw 'Native Messaging 冒烟测试失败。' }
+    node (Join-Path $projectRoot 'tests\native-channel-isolation.js')
+    if ($LASTEXITCODE -ne 0) { throw '耗时数据请求与实时播放通道隔离检查失败。' }
+    node (Join-Path $projectRoot 'tests\playlist-performance-contract.js')
+    if ($LASTEXITCODE -ne 0) { throw '歌单加载性能保护检查失败。' }
+    node (Join-Path $projectRoot 'tests\playback-click-guard.js')
+    if ($LASTEXITCODE -ne 0) { throw '播放请求重复点击保护检查失败。' }
+    node (Join-Path $projectRoot 'tests\unavailable-ui-contract.js')
+    if ($LASTEXITCODE -ne 0) { throw '不可播放歌曲状态与原因样式检查失败。' }
     node (Join-Path $projectRoot 'tests\verify-extension-id.js')
     if ($LASTEXITCODE -ne 0) { throw '扩展固定 ID 验证失败。' }
     node (Join-Path $projectRoot 'tests\security-static.js')
@@ -34,6 +42,8 @@ if (Get-Command node -ErrorAction SilentlyContinue) {
     if ($LASTEXITCODE -ne 0) { throw '网易云个人库协议检查失败。' }
     node (Join-Path $projectRoot 'tests\netease-visualizer-contract.js')
     if ($LASTEXITCODE -ne 0) { throw '网易云实时频段协议检查失败。' }
+    node (Join-Path $projectRoot 'tests\spectrum-mapping-contract.js')
+    if ($LASTEXITCODE -ne 0) { throw '频谱平方差值映射检查失败。' }
     node (Join-Path $projectRoot 'tests\native-player-identity-contract.js')
     if ($LASTEXITCODE -ne 0) { throw '网易云实际曲目身份同步检查失败。' }
     node (Join-Path $projectRoot 'tests\floating-ui-contract.js')

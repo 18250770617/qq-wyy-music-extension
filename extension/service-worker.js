@@ -1,41 +1,72 @@
 const SCRIPT_ID = "cloudmusic-floating-sites";
-let nativePort;
-const nativePending = new Map();
+const CONTROL_ACTIONS = new Set([
+  "netease.play",
+  "netease.playPlaylist",
+  "netease.queueAdd",
+  "netease.control"
+]);
+const PLAYBACK_ACTIONS = new Set(["netease.play", "netease.playPlaylist"]);
+let playbackTransactionPending = false;
+const nativeChannels = {
+  visualizer: { port: undefined, pending: new Map() },
+  control: { port: undefined, pending: new Map() },
+  data: { port: undefined, pending: new Map() }
+};
 
-function failNativePending(message) {
-  for (const pending of nativePending.values()) pending.reject(new Error(message));
-  nativePending.clear();
+function channelFor(action) {
+  if (action === "netease.visualizer") return nativeChannels.visualizer;
+  if (CONTROL_ACTIONS.has(action)) return nativeChannels.control;
+  return nativeChannels.data;
 }
 
-function connectNative() {
-  if (nativePort) return nativePort;
-  nativePort = chrome.runtime.connectNative("com.cloudmusic.edge.bridge");
-  nativePort.onMessage.addListener((response) => {
-    const pending = nativePending.get(response?.id);
+function failNativePending(channel, message) {
+  for (const pending of channel.pending.values()) {
+    clearTimeout(pending.timer);
+    pending.reject(new Error(message));
+  }
+  channel.pending.clear();
+}
+
+function connectNative(channel) {
+  if (channel.port) return channel.port;
+  const port = chrome.runtime.connectNative("com.cloudmusic.edge.bridge");
+  channel.port = port;
+  port.onMessage.addListener((response) => {
+    const pending = channel.pending.get(response?.id);
     if (!pending) return;
     clearTimeout(pending.timer);
-    nativePending.delete(response.id);
+    channel.pending.delete(response.id);
     pending.resolve(response);
   });
-  nativePort.onDisconnect.addListener(() => {
+  port.onDisconnect.addListener(() => {
     const error = chrome.runtime.lastError?.message || "本地桥接已断开";
-    nativePort = undefined;
-    failNativePending(error);
+    if (channel.port === port) channel.port = undefined;
+    failNativePending(channel, error);
   });
-  return nativePort;
+  return port;
 }
 
-function sendNative(action, payload) {
+function sendNativeRequest(action, payload) {
   return new Promise((resolve, reject) => {
+    const channel = channelFor(action);
     const id = crypto.randomUUID();
     const timeoutMs = action === "netease.playPlaylist" || action === "netease.play" ? 60000 : 35000;
     const timer = setTimeout(() => {
-      nativePending.delete(id);
+      channel.pending.delete(id);
       reject(new Error("本地桥接响应超时"));
     }, timeoutMs);
-    nativePending.set(id, { resolve, reject, timer });
-    try { connectNative().postMessage({ id, action, payload: payload || {} }); }
-    catch (error) { clearTimeout(timer); nativePending.delete(id); reject(error); }
+    channel.pending.set(id, { resolve, reject, timer });
+    try { connectNative(channel).postMessage({ id, action, payload: payload || {} }); }
+    catch (error) { clearTimeout(timer); channel.pending.delete(id); reject(error); }
+  });
+}
+
+function sendNative(action, payload) {
+  const isPlayback = PLAYBACK_ACTIONS.has(action);
+  if (isPlayback && playbackTransactionPending) return Promise.reject(new Error("上一条播放请求正在处理，请稍候"));
+  if (isPlayback) playbackTransactionPending = true;
+  return sendNativeRequest(action, payload).finally(() => {
+    if (isPlayback) playbackTransactionPending = false;
   });
 }
 

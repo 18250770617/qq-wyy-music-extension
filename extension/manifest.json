@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CloudMusic Edge",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "通过官方连接，以网页悬浮播放器搜索和控制网易云音乐、QQ 音乐。",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzrcYaYKEcE8uKB0wwf5evAWZ8+0JlneRnWmv5KXwHOyN3CXSVEfmOEMftTCINUadzJAoj1/DpMgpbceQMMAw86XNI2TQfDCHkcAyZFb8NW76spio6+XR8Kso9s/LBsoYjh2PTHyg1MfED/4pBR0pB4HMnXD8C/FmzgI8QsTQzRlOKVxC7I8lXgt2TkBnm7cn3O3ThusItpe1KPmAVqvsVqNaaKWaQgPis9Hhq9uH3K2cmtY9xb2RPumtQmrDRPrRBRvDC/Iqmcisw8jfQI5XLkrAs7cs9mO/X9Js0xNk/BIgTVteNvZ7odYmaxuczGLZ5HtrUEKrzo7mle+NMYyRQwIDAQAB",
   "permissions": ["activeTab", "nativeMessaging", "scripting", "storage"],

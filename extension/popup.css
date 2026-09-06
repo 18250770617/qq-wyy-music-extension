@@ -55,10 +55,22 @@ input[type="search"], input[type="password"] { width: 100%; border: 1px solid va
 .results { max-height: 248px; overflow-y: auto; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .empty { display: grid; place-items: center; padding: 38px 10px; text-align: center; }
 .empty span { color: #555c69; font-size: 26px; }
-.result { display: flex; gap: 10px; width: 100%; padding: 11px 3px; border: 0; border-bottom: 1px solid #22252c; background: transparent; text-align: left; }
+.result { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 3px; border: 0; border-bottom: 1px solid #22252c; background: transparent; text-align: left; }
 .result:last-child { border-bottom: 0; }
 .result:hover { background: #ffffff08; }
-.result:disabled { cursor: not-allowed; opacity: .68; }
+.result[aria-disabled="true"] { cursor: not-allowed; background: linear-gradient(90deg, rgba(255,89,104,.055), transparent 82%); box-shadow: inset 2px 0 rgba(255,102,117,.28); }
+.result[aria-disabled="true"]:hover { background: linear-gradient(90deg, rgba(255,89,104,.10), transparent 84%); }
+.result.is-unavailable .result-title { color: #c8ced8; }
+.result.is-unavailable .result-meta { color: #747d8b; }
+.result-status { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 4px; padding: 3px 6px; border: 1px solid transparent; border-radius: 999px; font-size: 9px; font-weight: 750; line-height: 1; white-space: nowrap; }
+.result-status svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.result-status.is-blocked { border-color: rgba(255,102,117,.24); background: rgba(255,89,104,.11); color: #ff9aa3; }
+.result-status.is-unknown { border-color: rgba(170,181,197,.20); background: rgba(170,181,197,.09); color: #adb5c4; }
+.result-status.is-trial { border-color: rgba(243,202,117,.24); background: rgba(243,202,117,.10); color: #f3ca75; }
+.result-status.is-arrow { padding: 0; border: 0; background: none; color: var(--accent); font-size: 14px; }
+.result.is-loading { pointer-events: none; }
+.result.is-loading .result-status > * { display: none; }
+.result.is-loading .result-status::after { content: "加载中"; }
 .result-index { display: grid; place-items: center; width: 27px; height: 27px; flex: 0 0 auto; border-radius: 8px; background: var(--panel-2); color: var(--muted); font-size: 11px; }
 .result-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 650; }
 .result-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12px; }

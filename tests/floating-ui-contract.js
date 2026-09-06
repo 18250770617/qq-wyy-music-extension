@@ -44,7 +44,9 @@ if (!/appearance-opacity[^>]*min="32"/.test(floating)) throw new Error("背景�
 if (!/dockHeight:\s*clamp\(Number\(next\.dockHeight\) \|\| 112, 72, 180\)/.test(floating)) throw new Error("底部频谱高度持久化值缺少范围校验");
 if (!/panel\.classList\.contains\("show"\) \|\| appearance\.dockEnabled/.test(floating)) throw new Error("面板关闭后底部频谱无法继续使用实时频段");
 if (!/querySelectorAll\("\.spectrum-dock-bar"\)[\s\S]{0,300}style\.setProperty\("--level"/.test(floating)) throw new Error("真实频段数据没有驱动底部单侧频谱");
-if (!/peak\s*=\s*Math\.max[\s\S]{0,520}Math\.pow\(relative,\s*1\.55\)/.test(floating)) throw new Error("实时频谱没有采用帧内动态范围映射");
+if (!/squareSignedDifference[\s\S]{0,1600}spectralSquare[\s\S]{0,500}riseSquare/.test(floating) || !/expandSpectrumLevels[\s\S]{0,900}squaredDifference/.test(floating)) {
+  throw new Error("实时频谱没有采用频段差值与瞬态差值的平方增强");
+}
 if (!worker.includes("chrome.runtime.connectNative")) throw new Error("状态轮询必须复用 Native Messaging 长连接");
 if (worker.includes("floatingAllSites")) throw new Error("不得在未明确授权时启用全站注入");
 

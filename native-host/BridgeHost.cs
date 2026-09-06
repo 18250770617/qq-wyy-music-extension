@@ -19,7 +19,7 @@ namespace CloudMusicEdge
 {
     internal static class BridgeHost
     {
-        private const string Version = "0.6.0";
+        private const string Version = "0.6.1";
         private const string QqBaseUrl = "https://a.y.qq.com";
         private const string QqSkillVersion = "0.0.3";
         private static readonly JavaScriptSerializer Json = new JavaScriptSerializer { MaxJsonLength = 8 * 1024 * 1024 };
@@ -241,7 +241,7 @@ namespace CloudMusicEdge
             string id = RequireEncryptedId(payload, "playlistId");
             int limit = GetOptionalInt(payload, "limit", 100, 1, 100);
             int offset = GetOptionalInt(payload, "offset", 0, 0, 10000);
-            return RunNcm(new[] { "playlist", "tracks", "--playlistId", id, "--limit", Number(limit), "--offset", Number(offset), "--userInput", "在 CloudMusic Edge 中读取歌单" }, 30000);
+            return RunNcm(new[] { "playlist", "tracks", "--playlistId", id, "--limit", Number(limit), "--offset", Number(offset), "--userInput", "在 CloudMusic Edge 中读取歌单" }, 30000, false);
         }
 
         private static object NeteaseLibrary(Dictionary<string, object> payload)
@@ -250,12 +250,12 @@ namespace CloudMusicEdge
             switch (kind)
             {
                 case "favorite":
-                    return RunNcm(new[] { "user", "favorite", "--userInput", "在 CloudMusic Edge 中获取喜欢的音乐" }, 30000);
+                    return RunNcm(new[] { "user", "favorite", "--userInput", "在 CloudMusic Edge 中获取喜欢的音乐" }, 30000, false);
                 case "created":
                 case "collected":
                     int limit = GetOptionalInt(payload, "limit", 50, 1, 100);
                     int offset = GetOptionalInt(payload, "offset", 0, 0, 10000);
-                    return RunNcm(new[] { "playlist", kind, "--limit", Number(limit), "--offset", Number(offset), "--userInput", "在 CloudMusic Edge 中获取个人歌单" }, 30000);
+                    return RunNcm(new[] { "playlist", kind, "--limit", Number(limit), "--offset", Number(offset), "--userInput", "在 CloudMusic Edge 中获取个人歌单" }, 30000, false);
                 default:
                     throw new UserError("不支持的个人库类型");
             }
@@ -918,7 +918,7 @@ namespace CloudMusicEdge
             return Map("stdout", Json.Serialize(payload), "payload", payload, "exitCode", 0, "managedPlayer", true);
         }
 
-        private static object RunNcm(string[] arguments, int timeoutMs)
+        private static object RunNcm(string[] arguments, int timeoutMs, bool includeRaw = true)
         {
             NcmRuntime runtime = FindNcmRuntime();
             if (runtime == null) throw new UserError("未检测到官方 ncm-cli，请先点击设置完成安装");
@@ -935,6 +935,7 @@ namespace CloudMusicEdge
             object success;
             if (payloadMap != null && payloadMap.TryGetValue("success", out success) && success is bool && !(bool)success)
                 throw new UserError(payloadMap.ContainsKey("message") ? SafeMessage(Convert.ToString(payloadMap["message"])) : "ncm-cli 操作失败");
+            if (!includeRaw && payload != null) return Map("payload", payload, "exitCode", result.ExitCode);
             return Map("stdout", StripAnsi(result.Stdout), "payload", payload, "exitCode", result.ExitCode);
         }
 

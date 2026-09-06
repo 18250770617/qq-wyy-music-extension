@@ -15,7 +15,8 @@
     refresh: '<svg viewBox="0 0 24 24"><path d="M19 8a7 7 0 10.4 7M19 4v4h-4"/></svg>',
     close: '<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg>',
     back: '<svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
-    palette: '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 100 18h1.4a2 2 0 001.2-3.6l-.4-.3a1.8 1.8 0 011.1-3.2H18A3 3 0 0021 11a8 8 0 00-9-8z"/><circle cx="7.5" cy="10" r="1"/><circle cx="10" cy="6.8" r="1"/><circle cx="14" cy="7" r="1"/></svg>'
+    palette: '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 100 18h1.4a2 2 0 001.2-3.6l-.4-.3a1.8 1.8 0 011.1-3.2H18A3 3 0 0021 11a8 8 0 00-9-8z"/><circle cx="7.5" cy="10" r="1"/><circle cx="10" cy="6.8" r="1"/><circle cx="14" cy="7" r="1"/></svg>',
+    lock: '<svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>'
   };
   const waveBars = Array.from({ length: 66 }, (_, i) => {
     const height = 5 + Math.round((Math.sin(i * 1.71) + 1) * 7 + (i % 7 === 0 ? 8 : 0));
@@ -48,7 +49,8 @@
       .panel-grid{display:grid;grid-template-columns:minmax(270px,.92fr) minmax(310px,1.08fr);flex:1;min-height:0}.player-column{display:flex;min-width:0;min-height:0;flex-direction:column;padding:10px 13px 11px;border-right:1px solid #ffffff10;overflow:auto;scrollbar-width:thin;scrollbar-color:#3c414c transparent}.visual-stage{position:relative;height:164px;flex:0 0 164px;overflow:hidden;border:1px solid #ffffff1c;border-radius:18px;background:radial-gradient(circle at 74% 20%,rgba(var(--visual-glow),.42),transparent 34%),radial-gradient(circle at 20% 75%,rgba(39,59,82,var(--panel-opacity)),transparent 42%),linear-gradient(145deg,rgba(39,41,49,var(--panel-opacity)),rgba(18,21,26,var(--panel-opacity)));box-shadow:inset 0 1px #ffffff14}.visual-stage:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 49.7%,#ffffff0b 50%,transparent 50.3%),linear-gradient(#ffffff05 1px,transparent 1px);background-size:100% 100%,100% 34px;opacity:.55}.visual-glow{position:absolute;inset:0;background:linear-gradient(110deg,transparent 20%,#ffffff0c 48%,transparent 72%);transform:translateX(-100%);animation:scan 5s linear infinite}.now{position:absolute;z-index:3;top:13px;left:14px;right:14px;display:flex;align-items:center;gap:10px}.disc{width:42px;height:42px;flex:0 0 auto;border:7px solid #171a20;border-radius:50%;background:repeating-radial-gradient(circle,#2d323d 0 2px,#171a20 3px 5px);box-shadow:0 8px 20px #0008;display:grid;place-items:center;animation:spin 8s linear infinite;animation-play-state:paused}.playing .disc{animation-play-state:running}.disc:after{content:"";width:11px;height:11px;border:4px solid #181a20;border-radius:50%;background:var(--accent)}.track{min-width:0;flex:1}.track-title{font-size:calc(16px * var(--font-scale));font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.track-meta{margin-top:3px;color:#b0b6c1;font-size:calc(11px * var(--font-scale));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.state-pill,.spectrum-pill{padding:4px 7px;border-radius:7px;background:#090b0fa6;color:#cbd0d8;font-size:9px;letter-spacing:.05em}.spectrum-pill{position:absolute;right:9px;bottom:6px;color:#828a97}
       .visual-glow{animation-play-state:paused}.playing .visual-glow{animation-play-state:running}.waveform{position:absolute;z-index:2;left:12px;right:12px;top:74px;height:38px;display:flex;align-items:center;justify-content:space-between}.waveform:after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:#fff9}.waveform i{z-index:1;width:2px;height:var(--h);border-radius:3px;background:#fff;box-shadow:0 0 5px var(--accent);animation:wavePulse .8s ease-in-out calc(var(--i)*-.025s) infinite alternate;animation-play-state:paused}.playing .waveform i{animation-play-state:running}.bass-bars{position:absolute;z-index:2;left:10px;right:10px;bottom:0;height:55px;display:flex;align-items:end;gap:3px}.bass-bars i{flex:1;height:var(--h);min-height:7px;border:1px solid var(--accent);border-bottom:0;border-radius:3px 3px 0 0;background:#fff;box-shadow:0 0 8px var(--accent);animation:bassPulse .72s ease-in-out calc(var(--i)*-.055s) infinite alternate;animation-play-state:paused;transform-origin:bottom}.playing .bass-bars i{animation-play-state:running}.live-spectrum .waveform i,.live-spectrum .bass-bars i{animation:none;transition:height .09s linear,opacity .16s ease}.live-spectrum .spectrum-pill{color:var(--accent)}
       .timeline{flex:0 0 auto;padding:10px 3px 3px}.range{appearance:none;width:100%;height:3px;border-radius:4px;background:linear-gradient(90deg,var(--accent) var(--seek),#5c626d var(--seek));cursor:pointer}.range::-webkit-slider-thumb{appearance:none;width:11px;height:11px;border:3px solid #fff;border-radius:50%;background:var(--accent);box-shadow:0 2px 9px #0008}.times{display:flex;justify-content:space-between;margin-top:4px;color:#757d8b;font-size:10px;font-variant-numeric:tabular-nums}.controls{display:flex;flex:0 0 auto;align-items:center;justify-content:center;gap:10px;padding:1px 3px 7px}.controls .icon{width:36px;height:36px}.controls .toggle{width:47px;height:47px;border-radius:15px}.volume{display:flex;flex:0 0 auto;align-items:center;gap:9px;padding:2px 3px 0;color:#858d9a}.volume svg{width:15px}.volume .range{min-width:0;flex:1;background:linear-gradient(90deg,var(--accent) var(--volume),#5c626d var(--volume))}.volume-label{width:24px;text-align:right;font-variant-numeric:tabular-nums}
-      .browser-column{display:flex;min-width:0;min-height:0;flex-direction:column;padding:11px 12px 12px}.mode-tabs,.subtabs{display:flex;align-items:center;gap:4px}.mode-tabs{flex:0 0 auto;margin-bottom:8px}.mode,.subtab{padding:7px 10px;border-radius:9px;background:transparent;color:#858d9a;font-weight:650}.mode.active,.subtab.active{background:#ffffff10;color:#fff}.mode svg{width:14px;height:14px;margin-right:5px;vertical-align:-3px}.browse-pane,.search-pane,.library-pane,.playlist-pane{display:flex;flex:1;min-height:0;flex-direction:column}.search-toolbar{display:flex;flex:0 0 auto;align-items:center;gap:6px}.search-toolbar .subtabs{flex:0 0 auto}.search-row{display:flex;min-width:0;flex:1;gap:6px}.search-row input{min-width:0;flex:1;border:1px solid #343945;border-radius:11px;background:#090b0fcc;color:#fff;padding:9px 10px;outline:0}.search-row input:focus{border-color:#6c7482}.search-button{padding:0 12px;border-radius:11px;background:var(--accent);color:#111319;font-weight:700}.pane-head{display:flex;flex:0 0 auto;align-items:center;justify-content:space-between}.refresh-library{width:29px;height:29px;border-radius:9px;background:#ffffff08;color:#9ba2ad}.message{flex:0 0 auto;min-height:25px;padding:7px 3px 4px;color:#8c94a1;font-size:11px}.results{flex:1;min-height:58px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#3c414c transparent}.item{display:flex;align-items:center;width:100%;gap:9px;padding:8px 7px;border-radius:11px;background:transparent;text-align:left}.item:hover{background:#ffffff0b}.item:disabled{opacity:.68}.item:disabled .item-icon{color:#7e8794}.item.is-trial .item-icon{font-size:9px;font-weight:800}.index{display:grid;place-items:center;width:26px;height:26px;flex:0 0 auto;border-radius:8px;background:#ffffff09;color:#777f8c;font-size:9px}.item-icon{font-size:14px;color:var(--accent)}.grow{min-width:0;flex:1}.title,.meta{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.title{font-weight:650}.meta{margin-top:1px;color:#858d99;font-size:11px}.empty{padding:23px 8px;text-align:center;color:#747c89}.empty strong{display:block;color:#aeb4be;font-size:13px}.empty span{display:block;margin-top:4px;font-size:11px}.load-more{flex:0 0 auto;width:100%;margin-top:5px;padding:7px;border:1px solid #ffffff14;border-radius:9px;background:#ffffff08;color:#b8bec8;font-size:11px}.load-more:hover{background:#ffffff10;color:#fff}
+      .browser-column{display:flex;min-width:0;min-height:0;flex-direction:column;padding:11px 12px 12px}.mode-tabs,.subtabs{display:flex;align-items:center;gap:4px}.mode-tabs{flex:0 0 auto;margin-bottom:8px}.mode,.subtab{padding:7px 10px;border-radius:9px;background:transparent;color:#858d9a;font-weight:650}.mode.active,.subtab.active{background:#ffffff10;color:#fff}.mode svg{width:14px;height:14px;margin-right:5px;vertical-align:-3px}.browse-pane,.search-pane,.library-pane,.playlist-pane{display:flex;flex:1;min-height:0;flex-direction:column}.search-toolbar{display:flex;flex:0 0 auto;align-items:center;gap:6px}.search-toolbar .subtabs{flex:0 0 auto}.search-row{display:flex;min-width:0;flex:1;gap:6px}.search-row input{min-width:0;flex:1;border:1px solid #343945;border-radius:11px;background:#090b0fcc;color:#fff;padding:9px 10px;outline:0}.search-row input:focus{border-color:#6c7482}.search-button{padding:0 12px;border-radius:11px;background:var(--accent);color:#111319;font-weight:700}.pane-head{display:flex;flex:0 0 auto;align-items:center;justify-content:space-between}.refresh-library{width:29px;height:29px;border-radius:9px;background:#ffffff08;color:#9ba2ad}.message{flex:0 0 auto;min-height:25px;padding:7px 3px 4px;color:#8c94a1;font-size:11px}.results{flex:1;min-height:58px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#3c414c transparent}.item{display:flex;align-items:center;width:100%;gap:9px;padding:8px 7px;border-radius:11px;background:transparent;text-align:left}.item:hover{background:#ffffff0b}.index{display:grid;place-items:center;width:26px;height:26px;flex:0 0 auto;border-radius:8px;background:#ffffff09;color:#777f8c;font-size:9px}.grow{min-width:0;flex:1}.title,.meta{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.title{font-weight:650}.meta{margin-top:1px;color:#858d99;font-size:11px}.empty{padding:23px 8px;text-align:center;color:#747c89}.empty strong{display:block;color:#aeb4be;font-size:13px}.empty span{display:block;margin-top:4px;font-size:11px}.load-more{flex:0 0 auto;width:100%;margin-top:5px;padding:7px;border:1px solid #ffffff14;border-radius:9px;background:#ffffff08;color:#b8bec8;font-size:11px}.load-more:hover{background:#ffffff10;color:#fff}
+      .item.is-unavailable{background:linear-gradient(90deg,#ff59680d,transparent 78%);box-shadow:inset 2px 0 #ff788544}.item.is-unavailable:hover{background:linear-gradient(90deg,#ff596817,transparent 82%)}.item.is-unavailable .title{color:#c8ced8}.item.is-unavailable .meta{color:#747d8b}.item-status{display:inline-flex;flex:0 0 auto;align-items:center;gap:4px;padding:3px 6px;border:1px solid transparent;border-radius:999px;font-size:9px;font-weight:750;line-height:1;white-space:nowrap}.item-status svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2}.item-status.is-blocked{border-color:#ff66752e;background:#ff59681a;color:#ff9aa3}.item-status.is-unknown{border-color:#aab5c52b;background:#aab5c512;color:#adb5c4}.item-status.is-trial{border-color:#f3ca7530;background:#f3ca7515;color:#f3ca75}.item-status.is-arrow{padding:0;border:0;background:none;color:var(--accent);font-size:14px}.item.is-loading{pointer-events:none}.item.is-loading .item-status>*{display:none}.item.is-loading .item-status:after{content:"加载中"}
       .playlist-head{display:grid;grid-template-columns:31px minmax(0,1fr) auto;align-items:center;gap:7px;flex:0 0 auto;padding-bottom:5px}.playlist-back{width:31px;height:31px;padding:0;border-radius:9px;background:#ffffff09;color:#b9c0ca}.playlist-copy{min-width:0}.playlist-title,.playlist-meta{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.playlist-title{font-weight:720}.playlist-meta{margin-top:1px;color:#858d99;font-size:10px}.playlist-play-all{padding:7px 9px;border-radius:9px;background:var(--accent);color:#111319;font-size:11px;font-weight:750}
       .appearance-panel{position:absolute;z-index:12;top:47px;right:11px;width:270px;max-height:calc(100% - 58px);overflow:auto;padding:13px;border:1px solid #ffffff23;border-radius:16px;background:rgba(var(--panel-top),var(--panel-opacity));box-shadow:0 18px 50px #000b;backdrop-filter:blur(28px);scrollbar-width:thin;scrollbar-color:#3c414c transparent}.appearance-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-weight:720}.appearance-title small{color:#8e96a3;font-weight:500}.theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.theme-option{height:38px;border:1px solid #ffffff18;border-radius:10px;background:linear-gradient(140deg,var(--sample-a),var(--sample-b));color:#fff;font-size:10px}.theme-option.active{border-color:var(--accent);box-shadow:0 0 0 2px #ffffff12}.setting-row{display:grid;grid-template-columns:72px minmax(0,1fr) 38px;align-items:center;gap:8px;margin-top:11px;color:#b4bbc5;font-size:11px}.setting-row output{text-align:right;color:#8c94a1}.font-options{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:10px}.font-option{padding:6px 4px;border-radius:8px;background:#ffffff08;color:#929aa6;font-size:10px}.font-option.active{background:#ffffff16;color:#fff}
       .dock-setting{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding-top:10px;border-top:1px solid #ffffff12;color:#d1d5dc;font-size:11px}.dock-setting input{width:15px;height:15px;accent-color:var(--accent)}.dock-source{margin:7px 0 0;color:#7f8794;font-size:9px;line-height:1.45}.dock-height-row.is-disabled{opacity:.45}.dock-height-row input:disabled{cursor:not-allowed}
@@ -71,8 +73,8 @@
           </section>
           <section class="browser-column">
             <nav class="mode-tabs"><button class="mode active" data-mode="search">${svg.search}搜索</button><button class="mode library-mode" data-mode="library">${svg.library}我的音乐</button></nav>
-            <div class="browse-pane"><section class="search-pane"><div class="search-toolbar"><div class="subtabs"><button class="subtab active" data-search-type="song">歌曲</button><button class="subtab" data-search-type="playlist">歌单</button></div><div class="search-row"><input maxlength="100" placeholder="搜索歌曲"><button class="search-button">搜索</button></div></div><div class="message search-message">搜索结果会按分类保留</div><div class="results search-results"></div></section><section class="library-pane hidden"><div class="pane-head"><div class="subtabs"><button class="subtab active" data-library-type="favorite">喜欢</button><button class="subtab" data-library-type="created">创建</button><button class="subtab" data-library-type="collected">收藏</button></div><button class="refresh-library" aria-label="刷新我的音乐">${svg.refresh}</button></div><div class="message library-message">从官方账号读取，不保存个人歌单数据</div><div class="results library-results"></div><button class="load-more library-load-more hidden">加载更多</button></section></div>
-            <section class="playlist-pane hidden"><header class="playlist-head"><button class="playlist-back" aria-label="返回列表">${svg.back}</button><span class="playlist-copy"><span class="playlist-title">歌单</span><span class="playlist-meta"></span></span><button class="playlist-play-all">播放全部</button></header><div class="message playlist-message">正在读取歌单…</div><div class="results playlist-results"></div><button class="load-more playlist-load-more hidden">加载更多</button></section>
+            <div class="browse-pane"><section class="search-pane"><div class="search-toolbar"><div class="subtabs"><button class="subtab active" data-search-type="song">歌曲</button><button class="subtab" data-search-type="playlist">歌单</button></div><div class="search-row"><input maxlength="100" placeholder="搜索歌曲"><button class="search-button">搜索</button></div></div><div class="message search-message" aria-live="polite">搜索结果会按分类保留</div><div class="results search-results"></div></section><section class="library-pane hidden"><div class="pane-head"><div class="subtabs"><button class="subtab active" data-library-type="favorite">喜欢</button><button class="subtab" data-library-type="created">创建</button><button class="subtab" data-library-type="collected">收藏</button></div><button class="refresh-library" aria-label="刷新我的音乐">${svg.refresh}</button></div><div class="message library-message" aria-live="polite">从官方账号读取，不保存个人歌单数据</div><div class="results library-results"></div><button class="load-more library-load-more hidden">加载更多</button></section></div>
+            <section class="playlist-pane hidden"><header class="playlist-head"><button class="playlist-back" aria-label="返回列表">${svg.back}</button><span class="playlist-copy"><span class="playlist-title">歌单</span><span class="playlist-meta"></span></span><button class="playlist-play-all">播放全部</button></header><div class="message playlist-message" aria-live="polite">正在读取歌单…</div><div class="results playlist-results"></div><button class="load-more playlist-load-more hidden">加载更多</button></section>
           </section>
         </div>
       </section>
@@ -109,6 +111,7 @@
   const latestSearchRequest = new Map();
   const latestLibraryRequest = new Map();
   const latestPlaylistRequest = new Map();
+  const libraryInFlight = new Map();
   const fonts = {
     modern: 'Inter,"Segoe UI",system-ui,"Microsoft YaHei",sans-serif',
     rounded: '"Arial Rounded MT Bold","Microsoft YaHei UI",system-ui,sans-serif',
@@ -131,7 +134,9 @@
   let visualizerStarted = false;
   let visualizerPending = false;
   let visualizerGeneration = 0;
-  const visualizerLevels = Array(10).fill(.08);
+  let playbackRequestPending = false;
+  const visualizerLevels = Array(10).fill(.03);
+  const visualizerPreviousAbsolute = Array(10).fill(0);
   let seeking = false;
 
   const native = async (action, payload = {}) => {
@@ -141,6 +146,7 @@
   };
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const edgeSnapDistance = 64;
+  const neteaseTrackPageSize = 40;
   const savePosition = () => chrome.storage.local.set({ [`float:${location.origin}`]: { left: parseFloat(host.style.left), top: parseFloat(host.style.top), snapSide } });
   const cacheKey = (sourceProvider = provider, type = searchType) => `${sourceProvider}:${type}`;
   const playlistKey = (item) => `${item.provider}:${item.encryptedId || item.playlistId}`;
@@ -360,41 +366,83 @@
       if (generation === visualizerGeneration) stopVisualizer();
     } finally { if (generation === visualizerGeneration) visualizerPending = false; }
   }
-  function renderVisualizerBands(rawBands) {
-    if (!Array.isArray(rawBands) || rawBands.length !== 10) return;
+  function squareSignedDifference(difference, scale = 1) {
+    const normalized = difference / Math.max(.0001, scale);
+    return Math.sign(normalized) * normalized * normalized;
+  }
+  function mapSpectrumTargets(rawBands, previousAbsolute) {
     const decibels = rawBands.map((raw) => {
       const value = Number(raw);
       return Number.isFinite(value) ? clamp(value, -90, 0) : -90;
     });
-    const peak = Math.max(...decibels);
-    const floor = Math.max(-82, peak - 40);
-    const span = Math.max(16, peak - floor);
-    const energy = clamp((peak + 72) / 54, 0, 1);
-    decibels.forEach((decibel, index) => {
-      const relative = clamp((decibel - floor) / span, 0, 1);
-      const target = Math.pow(relative, 1.55) * Math.pow(energy, .65);
-      const weight = target > visualizerLevels[index] ? .82 : .28;
-      visualizerLevels[index] += (target - visualizerLevels[index]) * weight;
+    const sorted = [...decibels].sort((a, b) => a - b);
+    const floor = sorted[1];
+    const ceiling = sorted[sorted.length - 2];
+    const span = Math.max(6, ceiling - floor);
+    const absolute = decibels.map((decibel) => Math.pow(clamp((decibel + 78) / 66, 0, 1), 1.2));
+    const relative = decibels.map((decibel) => clamp((decibel - floor) / span, 0, 1));
+    const localDifference = relative.map((value, index) => {
+      const before = relative[Math.max(0, index - 1)];
+      const after = relative[Math.min(relative.length - 1, index + 1)];
+      return value - (before + after) / 2;
     });
-    const sample = (position) => {
-      const scaled = clamp(position, 0, 1) * (visualizerLevels.length - 1);
+    const differenceScale = Math.max(.1, ...localDifference.map(Math.abs));
+    const spectralSquare = localDifference.map((difference) => squareSignedDifference(difference, differenceScale));
+    const rises = absolute.map((value, index) => Math.max(0, value - Number(previousAbsolute?.[index] || 0)));
+    const riseScale = Math.max(.06, ...rises);
+    const riseSquare = rises.map((difference) => Math.pow(difference / riseScale, 2));
+    const targets = absolute.map((value, index) => clamp(
+      .03 + .48 * value + .34 * Math.pow(relative[index], 1.4) + .14 * spectralSquare[index] + .14 * riseSquare[index],
+      .03,
+      1
+    ));
+    return { absolute, targets };
+  }
+  function smoothSpectrumLevels(current, targets) {
+    return targets.map((target, index) => {
+      const level = Number(current[index]) || .03;
+      const difference = target - level;
+      const strength = Math.min(1, Math.abs(difference));
+      const alpha = difference >= 0 ? .42 + .4 * strength * strength : .16 + .2 * strength * strength;
+      return clamp(level + difference * alpha, .03, 1);
+    });
+  }
+  function expandSpectrumLevels(levels, count) {
+    const adjacent = levels.slice(1).map((value, index) => value - levels[index]);
+    const differenceScale = Math.max(.08, ...adjacent.map(Math.abs));
+    return Array.from({ length: count }, (_, index) => {
+      const scaled = index / Math.max(1, count - 1) * (levels.length - 1);
       const low = Math.floor(scaled);
-      const high = Math.min(visualizerLevels.length - 1, low + 1);
-      return visualizerLevels[low] + (visualizerLevels[high] - visualizerLevels[low]) * (scaled - low);
-    };
+      const high = Math.min(levels.length - 1, low + 1);
+      const progress = scaled - low;
+      const difference = levels[high] - levels[low];
+      const base = levels[low] + difference * progress;
+      const squaredDifference = squareSignedDifference(difference, differenceScale);
+      const bend = squaredDifference * .16 * Math.sin(Math.PI * progress);
+      return clamp(base + bend, .03, 1);
+    });
+  }
+  function renderVisualizerBands(rawBands) {
+    if (!Array.isArray(rawBands) || rawBands.length !== 10) return;
+    const mapped = mapSpectrumTargets(rawBands, visualizerPreviousAbsolute);
+    mapped.absolute.forEach((value, index) => { visualizerPreviousAbsolute[index] = value; });
+    smoothSpectrumLevels(visualizerLevels, mapped.targets).forEach((value, index) => { visualizerLevels[index] = value; });
+    const waveformLevels = expandSpectrumLevels(visualizerLevels, root.querySelectorAll(".waveform i").length);
     root.querySelectorAll(".waveform i").forEach((bar, index, bars) => {
-      const level = sample(index / Math.max(1, bars.length - 1));
+      const level = waveformLevels[index];
       bar.style.height = `${3 + level * 31}px`;
       bar.style.opacity = String(.5 + level * .5);
     });
+    const bassLevels = expandSpectrumLevels(visualizerLevels, root.querySelectorAll(".bass-bars i").length);
     root.querySelectorAll(".bass-bars i").forEach((bar, index, bars) => {
-      const level = sample(index / Math.max(1, bars.length - 1));
+      const level = bassLevels[index];
       bar.style.height = `${7 + level * 43}px`;
       bar.style.opacity = String(.62 + level * .38);
     });
+    const dockLevels = expandSpectrumLevels(visualizerLevels, root.querySelectorAll(".spectrum-dock-bar").length);
     root.querySelectorAll(".spectrum-dock-bar").forEach((bar, index, bars) => {
-      const level = sample(index / Math.max(1, bars.length - 1));
-      bar.style.setProperty("--level", String(.03 + level * .97));
+      const level = dockLevels[index];
+      bar.style.setProperty("--level", String(level));
       bar.style.opacity = String(.58 + level * .42);
     });
   }
@@ -407,6 +455,8 @@
     visualizerAttached = false;
     visualizerStarted = false;
     visualizerPending = false;
+    visualizerLevels.fill(.03);
+    visualizerPreviousAbsolute.fill(0);
     shell.classList.remove("live-spectrum");
     renderSpectrumMode();
     native("netease.visualizer", { mode: "stop", clientId: visualizerClientId }).catch(() => {});
@@ -458,22 +508,47 @@
     container.querySelector("strong").textContent = title;
     container.querySelector("span").textContent = detail;
   }
+  function availabilityBadge(item) {
+    if (item.kind !== "song" || item.availability === "playable") return { label: "›", tone: "arrow", icon: "" };
+    const labels = {
+      copyright: "无版权",
+      vip: "会员限制",
+      digital_album: "需购买",
+      permission: "状态未知",
+      identity: "信息不全",
+      full_trial: "试听",
+      segment_trial: "片段"
+    };
+    if (item.availability === "trial") return { label: labels[item.reasonCode] || "试听", tone: "trial", icon: svg.play };
+    return { label: labels[item.reasonCode] || "不可播放", tone: item.availability === "unknown" ? "unknown" : "blocked", icon: svg.lock };
+  }
   function renderItems(container, items, source) {
     container.replaceChildren();
     if (!items.length) return empty(container, "这里还是空的", source === "library" ? "登录账号还没有相关内容" : source === "playlist" ? "该歌单暂无歌曲" : "换个关键词试试");
+    const fragment = document.createDocumentFragment();
     items.forEach((item, index) => {
       const button = document.createElement("button");
       button.className = `item${item.canPlay === false ? " is-unavailable" : item.availability === "trial" ? " is-trial" : ""}`;
-      button.disabled = item.canPlay === false;
-      button.innerHTML = `<span class="index"></span><span class="grow"><span class="title"></span><span class="meta"></span></span><span class="item-icon">›</span>`;
+      if (item.canPlay === false) button.setAttribute("aria-disabled", "true");
+      button.innerHTML = `<span class="index"></span><span class="grow"><span class="title"></span><span class="meta"></span></span><span class="item-status"></span>`;
       button.querySelector(".index").textContent = item.kind === "playlist" ? "歌单" : String(index + 1).padStart(2, "0");
       button.querySelector(".title").textContent = item.title;
-      button.querySelector(".meta").textContent = item.kind === "song" && item.availability !== "playable" && item.reasonText ? `${item.meta} · ${item.reasonText}` : item.meta;
-      button.querySelector(".item-icon").textContent = item.canPlay === false ? "×" : item.availability === "trial" ? "试听" : "›";
-      if (item.canPlay === false) button.title = item.reasonText || "当前不可播放";
-      button.addEventListener("click", () => activateItem(item, source));
-      container.appendChild(button);
+      button.querySelector(".meta").textContent = item.meta;
+      const badge = availabilityBadge(item);
+      const status = button.querySelector(".item-status");
+      status.classList.add(`is-${badge.tone}`);
+      if (badge.icon) status.insertAdjacentHTML("afterbegin", badge.icon);
+      const statusText = document.createElement("span");
+      statusText.textContent = badge.label;
+      status.appendChild(statusText);
+      if (item.canPlay === false) {
+        button.title = item.reasonText || "当前不可播放";
+        button.setAttribute("aria-label", `${item.title}，${item.meta}，不可播放：${item.reasonText || badge.label}`);
+      }
+      button.addEventListener("click", () => activateItem(item, source, button));
+      fragment.appendChild(button);
     });
+    container.appendChild(fragment);
   }
   function restoreSearch() {
     const cached = searchCache.get(cacheKey());
@@ -614,6 +689,10 @@
     if (provider !== "netease") return;
     const requestedType = libraryType;
     if (!force && libraryCache.has(requestedType)) return renderLibraryEntry(requestedType, libraryCache.get(requestedType));
+    if (libraryInFlight.has(requestedType)) return libraryInFlight.get(requestedType);
+    let finishLoading;
+    const inFlight = new Promise((resolve) => { finishLoading = resolve; });
+    libraryInFlight.set(requestedType, inFlight);
     const requestId = (latestLibraryRequest.get(requestedType) || 0) + 1;
     latestLibraryRequest.set(requestedType, requestId);
     libraryMessage.textContent = requestedType === "favorite" ? "正在读取喜欢的歌曲…" : "正在读取个人歌单…";
@@ -627,7 +706,7 @@
         const favorite = normalizeLibrary(await native("netease.library", { kind: "favorite" }), "favorite")[0];
         if (!favorite) throw new Error("没有找到红心歌单");
         favoritePlaylist = favorite;
-        const tracks = await native("netease.playlistTracks", { playlistId: favorite.encryptedId, limit: 80, offset: 0 });
+        const tracks = await native("netease.playlistTracks", { playlistId: favorite.encryptedId, limit: neteaseTrackPageSize, offset: 0 });
         batch = libraryBatch(tracks);
         items = normalize(tracks, "song", "netease");
         batch.total = favorite.trackCount || batch.total;
@@ -646,6 +725,9 @@
       const cached = libraryCache.get(requestedType);
       if (cached) { renderLibraryEntry(requestedType, cached); libraryMessage.textContent = `刷新失败：${error.message}`; }
       else { libraryMessage.textContent = error.message; empty(libraryResults, "读取失败", "请确认网易云账号仍处于登录状态"); }
+    } finally {
+      if (libraryInFlight.get(requestedType) === inFlight) libraryInFlight.delete(requestedType);
+      finishLoading();
     }
   }
   async function loadMoreLibrary() {
@@ -659,7 +741,7 @@
     libraryLoadMore.textContent = "正在加载…";
     try {
       const data = requestedType === "favorite"
-        ? await native("netease.playlistTracks", { playlistId: entry.favoritePlaylist.encryptedId, limit: 80, offset: entry.offset })
+        ? await native("netease.playlistTracks", { playlistId: entry.favoritePlaylist.encryptedId, limit: neteaseTrackPageSize, offset: entry.offset })
         : await native("netease.library", { kind: requestedType, limit: 80, offset: entry.offset });
       if (latestLibraryRequest.get(requestedType) !== requestId) return;
       const batch = libraryBatch(data);
@@ -754,6 +836,10 @@
     const key = activePlaylistKey;
     const entry = playlistCache.get(key);
     if (!entry) return;
+    if (entry.loading) return entry.loading;
+    let finishLoading;
+    const loading = new Promise((resolve) => { finishLoading = resolve; });
+    entry.loading = loading;
     const requestId = (latestPlaylistRequest.get(key) || 0) + 1;
     latestPlaylistRequest.set(key, requestId);
     const requestedPage = force ? 0 : entry.page;
@@ -763,7 +849,7 @@
     try {
       const data = entry.playlist.provider === "qq"
         ? await native("qq.playlistDetail", { playlistId: entry.playlist.playlistId, page: requestedPage })
-        : await native("netease.playlistTracks", { playlistId: entry.playlist.encryptedId, limit: 80, offset: requestedOffset });
+        : await native("netease.playlistTracks", { playlistId: entry.playlist.encryptedId, limit: neteaseTrackPageSize, offset: requestedOffset });
       if (latestPlaylistRequest.get(key) !== requestId) return;
       const additions = normalize(data, "song", entry.playlist.provider);
       const rawCount = rawTrackCount(data, entry.playlist.provider);
@@ -772,7 +858,7 @@
       entry.offset = requestedOffset + rawCount;
       entry.page = requestedPage + 1;
       entry.total = Math.max(entry.total, findTotal(data));
-      const pageSize = entry.playlist.provider === "qq" ? 20 : 80;
+      const pageSize = entry.playlist.provider === "qq" ? 20 : neteaseTrackPageSize;
       entry.hasMore = rawCount > 0 && (entry.total > 0 ? entry.offset < entry.total : rawCount >= pageSize);
       entry.loaded = true;
       entry.message = `${availabilitySummary(entry.items)}${entry.total > entry.items.length ? ` / 共 ${entry.total}` : ""} · 点击可播歌曲`;
@@ -781,9 +867,24 @@
       if (latestPlaylistRequest.get(key) !== requestId || activePlaylistKey !== key) return;
       entry.message = `读取失败：${error.message}`;
       showPlaylist(entry);
+    } finally {
+      if (entry.loading === loading) entry.loading = null;
+      finishLoading();
     }
   }
-  async function playWholePlaylist(entry) {
+  async function playWholePlaylist(entry, trigger) {
+    if (playbackRequestPending) {
+      playlistMessage.textContent = "上一条播放请求正在处理，请稍候";
+      return;
+    }
+    playbackRequestPending = true;
+    const key = playlistKey(entry.playlist);
+    const originalLabel = trigger?.textContent;
+    if (trigger) {
+      trigger.disabled = true;
+      trigger.setAttribute("aria-busy", "true");
+      trigger.textContent = "正在启动…";
+    }
     const item = entry.playlist;
     try {
       if (item.provider === "qq") {
@@ -794,15 +895,34 @@
       const result = await native("netease.playPlaylist", item);
       state = { ...state, ...parseState(result) };
       renderState();
-      playlistMessage.textContent = `正在播放：${state.title || item.title}`;
-    } catch (error) { playlistMessage.textContent = error.message; }
+      if (activePlaylistKey === key) playlistMessage.textContent = `正在播放：${state.title || item.title}`;
+    } catch (error) {
+      if (activePlaylistKey === key) playlistMessage.textContent = error.message;
+    }
+    finally {
+      playbackRequestPending = false;
+      if (trigger) {
+        trigger.removeAttribute("aria-busy");
+        if (activePlaylistKey === key) {
+          trigger.disabled = false;
+          trigger.textContent = originalLabel;
+        }
+      }
+    }
   }
-  async function activateItem(item) {
+  async function activateItem(item, source, trigger) {
     if (item.kind === "playlist") return openPlaylist(item);
     if (item.canPlay === false) {
       visibleMessage().textContent = item.reasonText || "当前歌曲不可播放";
       return;
     }
+    if (playbackRequestPending) {
+      visibleMessage().textContent = "上一条播放请求正在处理，请稍候";
+      return;
+    }
+    playbackRequestPending = true;
+    trigger?.classList.add("is-loading");
+    trigger?.setAttribute("aria-busy", "true");
     try {
       if (item.provider === "qq") {
         window.open(officialQqUrl(item.url, item.mid), "_blank", "noopener");
@@ -813,6 +933,11 @@
       renderState();
       visibleMessage().textContent = `${result?.payload?.message || "正在播放"}：${state.title || item.title}`;
     } catch (error) { visibleMessage().textContent = error.message; }
+    finally {
+      playbackRequestPending = false;
+      trigger?.classList.remove("is-loading");
+      trigger?.removeAttribute("aria-busy");
+    }
   }
 
   root.querySelector(".dock").addEventListener("click", (event) => event.stopPropagation());
@@ -899,9 +1024,9 @@
   libraryLoadMore.addEventListener("click", loadMoreLibrary);
   playlistLoadMore.addEventListener("click", () => loadPlaylist(false));
   root.querySelector(".playlist-back").addEventListener("click", closePlaylist);
-  root.querySelector(".playlist-play-all").addEventListener("click", () => {
+  root.querySelector(".playlist-play-all").addEventListener("click", (event) => {
     const entry = playlistCache.get(activePlaylistKey);
-    if (entry) playWholePlaylist(entry);
+    if (entry) playWholePlaylist(entry, event.currentTarget);
   });
   providerButton.addEventListener("click", () => {
     releaseSearchButton();
