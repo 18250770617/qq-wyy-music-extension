@@ -28,10 +28,11 @@ function connectNative() {
 function sendNative(action, payload) {
   return new Promise((resolve, reject) => {
     const id = crypto.randomUUID();
+    const timeoutMs = action === "netease.playPlaylist" || action === "netease.play" ? 60000 : 35000;
     const timer = setTimeout(() => {
       nativePending.delete(id);
       reject(new Error("本地桥接响应超时"));
-    }, 30000);
+    }, timeoutMs);
     nativePending.set(id, { resolve, reject, timer });
     try { connectNative().postMessage({ id, action, payload: payload || {} }); }
     catch (error) { clearTimeout(timer); nativePending.delete(id); reject(error); }

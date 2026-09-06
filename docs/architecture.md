@@ -26,8 +26,9 @@ CloudMusicBridge.exe
 
 ## 数据与生命周期
 
-- 扩展本地存储：只保存所选 Provider。
+- 扩展本地存储：保存所选 Provider、授权站点和非敏感外观/位置偏好。
 - `%LOCALAPPDATA%\CloudMusicEdge\qq.key`：DPAPI 加密 QQ API Key。
+- `%LOCALAPPDATA%\CloudMusicEdge\netease-player.json`：只缓存官方播放器最近一次已核对的非敏感曲名、队列位置和播放状态；真实身份仍以 `ncm-cli state` 为准。
 - 网易云配置与登录：ncm-cli 自有目录。
 - 卸载脚本只移除注册表连接，不删除用户密钥；如需删除，用户可手动删除本地配置目录。
 

@@ -28,7 +28,7 @@
   const miniBars = Array.from({ length: 3 }, (_, i) => `<i style="--i:${i};--h:${7 + (i % 2) * 5}px"></i>`).join("");
   const spectrumDockBars = Array.from({ length: 42 }, (_, i) => {
     const height = 10 + Math.round((Math.sin(i * .91) + 1) * 12 + (i % 9 === 0 ? 8 : 0));
-    return `<i class="spectrum-dock-bar" style="--i:${i};--h:${height}%"></i>`;
+    return `<i class="spectrum-dock-bar" style="--i:${i};--h:${height}%;--level:.08"></i>`;
   }).join("");
   const viewportWidth = () => document.documentElement.clientWidth || innerWidth;
   const viewportHeight = () => document.documentElement.clientHeight || innerHeight;
@@ -45,15 +45,15 @@
       .orb{position:absolute;width:44px;height:44px;padding:0;border:1px solid #ffffff31;border-radius:50%;background:rgba(var(--panel-bottom),.96);color:#fff;box-shadow:0 10px 28px #0007,inset 0 1px #ffffff20;cursor:grab;user-select:none;transition:transform .18s,box-shadow .18s}.orb:hover{transform:scale(1.05);box-shadow:0 14px 34px #0009,0 0 0 4px #ffffff0a}.orb:active{cursor:grabbing}.orb-ring{position:absolute;inset:-1px;border-radius:inherit;background:conic-gradient(var(--accent) var(--seek),transparent 0);mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 0)}.mini-wave{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:2px}.mini-wave i{width:2px;height:var(--h);border-radius:3px;background:linear-gradient(#fff,var(--accent));animation:miniPulse .65s ease-in-out calc(var(--i)*-.1s) infinite alternate;animation-play-state:paused}.playing .mini-wave i{animation-play-state:running}
       .dock{pointer-events:none;position:absolute;top:1px;display:flex;gap:1px;padding:4px;border:1px solid #ffffff20;border-radius:17px;background:rgba(var(--panel-bottom),.94);box-shadow:0 15px 40px #0008;backdrop-filter:blur(24px);opacity:0;transform:scale(.9);transition:.18s ease}.right .dock{right:52px;transform-origin:right}.left .dock{left:52px;transform-origin:left}.open .dock{pointer-events:auto;opacity:1;transform:scale(1)}.icon{display:grid;place-items:center;width:34px;height:34px;padding:0;border-radius:11px;background:transparent;color:#cdd2db}.icon:hover{background:#ffffff10;color:#fff}.icon.toggle{background:#f7f8fa;color:#111319}.icon.panel-button{background:var(--accent);color:#111319}.play-glyph,.pause-glyph{display:grid}.playing .play-glyph,.paused .pause-glyph{display:none}
       .orb,.dock{z-index:7}.panel{pointer-events:auto;position:fixed;z-index:8;top:8px;left:8px;width:min(660px,calc(var(--viewport-width,100vw) - 16px));height:min(404px,calc(var(--viewport-height,100vh) - 16px));overflow:hidden;display:flex;flex-direction:column;border:1px solid #ffffff26;border-radius:24px;background:linear-gradient(155deg,rgba(var(--panel-top),var(--panel-opacity)),rgba(var(--panel-bottom),var(--panel-opacity)) 62%);color:#f7f8fa;box-shadow:0 28px 80px #000b;backdrop-filter:blur(30px) saturate(1.18);opacity:0;visibility:hidden;transform:translateY(7px) scale(.985);transition:opacity .18s ease,transform .18s ease,visibility .18s}.panel[data-placement="above"]{transform:translateY(-7px) scale(.985)}.panel.show{opacity:1;visibility:visible;transform:none}.panel-head{position:relative;display:flex;flex:0 0 50px;align-items:center;justify-content:space-between;padding:9px 13px 7px 17px;border-bottom:1px solid #ffffff0e}.brand{font-size:10px;font-weight:750;letter-spacing:.2em;color:#929aa8}.head-actions{display:flex;align-items:center;gap:5px}.provider{padding:7px 10px;border:1px solid #ffffff1d;border-radius:10px;background:#ffffff09}.provider:after{content:"";display:inline-block;width:6px;height:6px;margin-left:7px;border-radius:50%;background:var(--provider);box-shadow:0 0 8px var(--provider)}.head-icon{width:30px;height:30px;border-radius:9px;background:transparent;color:#89909c}.head-icon:hover{background:#ffffff0d;color:#fff}
-      .panel-grid{display:grid;grid-template-columns:minmax(270px,.92fr) minmax(310px,1.08fr);flex:1;min-height:0}.player-column{display:flex;min-width:0;min-height:0;flex-direction:column;padding:10px 13px 11px;border-right:1px solid #ffffff10;overflow:auto;scrollbar-width:thin;scrollbar-color:#3c414c transparent}.visual-stage{position:relative;height:164px;flex:0 0 164px;overflow:hidden;border:1px solid #ffffff1c;border-radius:18px;background:radial-gradient(circle at 74% 20%,rgba(var(--visual-glow),.42),transparent 34%),radial-gradient(circle at 20% 75%,#273b5266,transparent 42%),linear-gradient(145deg,#272931,#12151a);box-shadow:inset 0 1px #ffffff14}.visual-stage:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 49.7%,#ffffff0b 50%,transparent 50.3%),linear-gradient(#ffffff05 1px,transparent 1px);background-size:100% 100%,100% 34px;opacity:.55}.visual-glow{position:absolute;inset:0;background:linear-gradient(110deg,transparent 20%,#ffffff0c 48%,transparent 72%);transform:translateX(-100%);animation:scan 5s linear infinite}.now{position:absolute;z-index:3;top:13px;left:14px;right:14px;display:flex;align-items:center;gap:10px}.disc{width:42px;height:42px;flex:0 0 auto;border:7px solid #171a20;border-radius:50%;background:repeating-radial-gradient(circle,#2d323d 0 2px,#171a20 3px 5px);box-shadow:0 8px 20px #0008;display:grid;place-items:center;animation:spin 8s linear infinite;animation-play-state:paused}.playing .disc{animation-play-state:running}.disc:after{content:"";width:11px;height:11px;border:4px solid #181a20;border-radius:50%;background:var(--accent)}.track{min-width:0;flex:1}.track-title{font-size:calc(16px * var(--font-scale));font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.track-meta{margin-top:3px;color:#b0b6c1;font-size:calc(11px * var(--font-scale));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.state-pill,.spectrum-pill{padding:4px 7px;border-radius:7px;background:#090b0fa6;color:#cbd0d8;font-size:9px;letter-spacing:.05em}.spectrum-pill{position:absolute;right:9px;bottom:6px;color:#828a97}
+      .panel-grid{display:grid;grid-template-columns:minmax(270px,.92fr) minmax(310px,1.08fr);flex:1;min-height:0}.player-column{display:flex;min-width:0;min-height:0;flex-direction:column;padding:10px 13px 11px;border-right:1px solid #ffffff10;overflow:auto;scrollbar-width:thin;scrollbar-color:#3c414c transparent}.visual-stage{position:relative;height:164px;flex:0 0 164px;overflow:hidden;border:1px solid #ffffff1c;border-radius:18px;background:radial-gradient(circle at 74% 20%,rgba(var(--visual-glow),.42),transparent 34%),radial-gradient(circle at 20% 75%,rgba(39,59,82,var(--panel-opacity)),transparent 42%),linear-gradient(145deg,rgba(39,41,49,var(--panel-opacity)),rgba(18,21,26,var(--panel-opacity)));box-shadow:inset 0 1px #ffffff14}.visual-stage:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 49.7%,#ffffff0b 50%,transparent 50.3%),linear-gradient(#ffffff05 1px,transparent 1px);background-size:100% 100%,100% 34px;opacity:.55}.visual-glow{position:absolute;inset:0;background:linear-gradient(110deg,transparent 20%,#ffffff0c 48%,transparent 72%);transform:translateX(-100%);animation:scan 5s linear infinite}.now{position:absolute;z-index:3;top:13px;left:14px;right:14px;display:flex;align-items:center;gap:10px}.disc{width:42px;height:42px;flex:0 0 auto;border:7px solid #171a20;border-radius:50%;background:repeating-radial-gradient(circle,#2d323d 0 2px,#171a20 3px 5px);box-shadow:0 8px 20px #0008;display:grid;place-items:center;animation:spin 8s linear infinite;animation-play-state:paused}.playing .disc{animation-play-state:running}.disc:after{content:"";width:11px;height:11px;border:4px solid #181a20;border-radius:50%;background:var(--accent)}.track{min-width:0;flex:1}.track-title{font-size:calc(16px * var(--font-scale));font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.track-meta{margin-top:3px;color:#b0b6c1;font-size:calc(11px * var(--font-scale));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.state-pill,.spectrum-pill{padding:4px 7px;border-radius:7px;background:#090b0fa6;color:#cbd0d8;font-size:9px;letter-spacing:.05em}.spectrum-pill{position:absolute;right:9px;bottom:6px;color:#828a97}
       .visual-glow{animation-play-state:paused}.playing .visual-glow{animation-play-state:running}.waveform{position:absolute;z-index:2;left:12px;right:12px;top:74px;height:38px;display:flex;align-items:center;justify-content:space-between}.waveform:after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:#fff9}.waveform i{z-index:1;width:2px;height:var(--h);border-radius:3px;background:#fff;box-shadow:0 0 5px var(--accent);animation:wavePulse .8s ease-in-out calc(var(--i)*-.025s) infinite alternate;animation-play-state:paused}.playing .waveform i{animation-play-state:running}.bass-bars{position:absolute;z-index:2;left:10px;right:10px;bottom:0;height:55px;display:flex;align-items:end;gap:3px}.bass-bars i{flex:1;height:var(--h);min-height:7px;border:1px solid var(--accent);border-bottom:0;border-radius:3px 3px 0 0;background:#fff;box-shadow:0 0 8px var(--accent);animation:bassPulse .72s ease-in-out calc(var(--i)*-.055s) infinite alternate;animation-play-state:paused;transform-origin:bottom}.playing .bass-bars i{animation-play-state:running}.live-spectrum .waveform i,.live-spectrum .bass-bars i{animation:none;transition:height .09s linear,opacity .16s ease}.live-spectrum .spectrum-pill{color:var(--accent)}
       .timeline{flex:0 0 auto;padding:10px 3px 3px}.range{appearance:none;width:100%;height:3px;border-radius:4px;background:linear-gradient(90deg,var(--accent) var(--seek),#5c626d var(--seek));cursor:pointer}.range::-webkit-slider-thumb{appearance:none;width:11px;height:11px;border:3px solid #fff;border-radius:50%;background:var(--accent);box-shadow:0 2px 9px #0008}.times{display:flex;justify-content:space-between;margin-top:4px;color:#757d8b;font-size:10px;font-variant-numeric:tabular-nums}.controls{display:flex;flex:0 0 auto;align-items:center;justify-content:center;gap:10px;padding:1px 3px 7px}.controls .icon{width:36px;height:36px}.controls .toggle{width:47px;height:47px;border-radius:15px}.volume{display:flex;flex:0 0 auto;align-items:center;gap:9px;padding:2px 3px 0;color:#858d9a}.volume svg{width:15px}.volume .range{min-width:0;flex:1;background:linear-gradient(90deg,var(--accent) var(--volume),#5c626d var(--volume))}.volume-label{width:24px;text-align:right;font-variant-numeric:tabular-nums}
-      .browser-column{display:flex;min-width:0;min-height:0;flex-direction:column;padding:11px 12px 12px}.mode-tabs,.subtabs{display:flex;align-items:center;gap:4px}.mode-tabs{flex:0 0 auto;margin-bottom:8px}.mode,.subtab{padding:7px 10px;border-radius:9px;background:transparent;color:#858d9a;font-weight:650}.mode.active,.subtab.active{background:#ffffff10;color:#fff}.mode svg{width:14px;height:14px;margin-right:5px;vertical-align:-3px}.browse-pane,.search-pane,.library-pane,.playlist-pane{display:flex;flex:1;min-height:0;flex-direction:column}.search-toolbar{display:flex;flex:0 0 auto;align-items:center;gap:6px}.search-toolbar .subtabs{flex:0 0 auto}.search-row{display:flex;min-width:0;flex:1;gap:6px}.search-row input{min-width:0;flex:1;border:1px solid #343945;border-radius:11px;background:#090b0fcc;color:#fff;padding:9px 10px;outline:0}.search-row input:focus{border-color:#6c7482}.search-button{padding:0 12px;border-radius:11px;background:var(--accent);color:#111319;font-weight:700}.pane-head{display:flex;flex:0 0 auto;align-items:center;justify-content:space-between}.refresh-library{width:29px;height:29px;border-radius:9px;background:#ffffff08;color:#9ba2ad}.message{flex:0 0 auto;min-height:25px;padding:7px 3px 4px;color:#8c94a1;font-size:11px}.results{flex:1;min-height:58px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#3c414c transparent}.item{display:flex;align-items:center;width:100%;gap:9px;padding:8px 7px;border-radius:11px;background:transparent;text-align:left}.item:hover{background:#ffffff0b}.index{display:grid;place-items:center;width:26px;height:26px;flex:0 0 auto;border-radius:8px;background:#ffffff09;color:#777f8c;font-size:9px}.item-icon{font-size:14px;color:var(--accent)}.grow{min-width:0;flex:1}.title,.meta{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.title{font-weight:650}.meta{margin-top:1px;color:#858d99;font-size:11px}.empty{padding:23px 8px;text-align:center;color:#747c89}.empty strong{display:block;color:#aeb4be;font-size:13px}.empty span{display:block;margin-top:4px;font-size:11px}.load-more{flex:0 0 auto;width:100%;margin-top:5px;padding:7px;border:1px solid #ffffff14;border-radius:9px;background:#ffffff08;color:#b8bec8;font-size:11px}.load-more:hover{background:#ffffff10;color:#fff}
+      .browser-column{display:flex;min-width:0;min-height:0;flex-direction:column;padding:11px 12px 12px}.mode-tabs,.subtabs{display:flex;align-items:center;gap:4px}.mode-tabs{flex:0 0 auto;margin-bottom:8px}.mode,.subtab{padding:7px 10px;border-radius:9px;background:transparent;color:#858d9a;font-weight:650}.mode.active,.subtab.active{background:#ffffff10;color:#fff}.mode svg{width:14px;height:14px;margin-right:5px;vertical-align:-3px}.browse-pane,.search-pane,.library-pane,.playlist-pane{display:flex;flex:1;min-height:0;flex-direction:column}.search-toolbar{display:flex;flex:0 0 auto;align-items:center;gap:6px}.search-toolbar .subtabs{flex:0 0 auto}.search-row{display:flex;min-width:0;flex:1;gap:6px}.search-row input{min-width:0;flex:1;border:1px solid #343945;border-radius:11px;background:#090b0fcc;color:#fff;padding:9px 10px;outline:0}.search-row input:focus{border-color:#6c7482}.search-button{padding:0 12px;border-radius:11px;background:var(--accent);color:#111319;font-weight:700}.pane-head{display:flex;flex:0 0 auto;align-items:center;justify-content:space-between}.refresh-library{width:29px;height:29px;border-radius:9px;background:#ffffff08;color:#9ba2ad}.message{flex:0 0 auto;min-height:25px;padding:7px 3px 4px;color:#8c94a1;font-size:11px}.results{flex:1;min-height:58px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#3c414c transparent}.item{display:flex;align-items:center;width:100%;gap:9px;padding:8px 7px;border-radius:11px;background:transparent;text-align:left}.item:hover{background:#ffffff0b}.item:disabled{opacity:.68}.item:disabled .item-icon{color:#7e8794}.item.is-trial .item-icon{font-size:9px;font-weight:800}.index{display:grid;place-items:center;width:26px;height:26px;flex:0 0 auto;border-radius:8px;background:#ffffff09;color:#777f8c;font-size:9px}.item-icon{font-size:14px;color:var(--accent)}.grow{min-width:0;flex:1}.title,.meta{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.title{font-weight:650}.meta{margin-top:1px;color:#858d99;font-size:11px}.empty{padding:23px 8px;text-align:center;color:#747c89}.empty strong{display:block;color:#aeb4be;font-size:13px}.empty span{display:block;margin-top:4px;font-size:11px}.load-more{flex:0 0 auto;width:100%;margin-top:5px;padding:7px;border:1px solid #ffffff14;border-radius:9px;background:#ffffff08;color:#b8bec8;font-size:11px}.load-more:hover{background:#ffffff10;color:#fff}
       .playlist-head{display:grid;grid-template-columns:31px minmax(0,1fr) auto;align-items:center;gap:7px;flex:0 0 auto;padding-bottom:5px}.playlist-back{width:31px;height:31px;padding:0;border-radius:9px;background:#ffffff09;color:#b9c0ca}.playlist-copy{min-width:0}.playlist-title,.playlist-meta{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.playlist-title{font-weight:720}.playlist-meta{margin-top:1px;color:#858d99;font-size:10px}.playlist-play-all{padding:7px 9px;border-radius:9px;background:var(--accent);color:#111319;font-size:11px;font-weight:750}
-      .appearance-panel{position:absolute;z-index:12;top:47px;right:11px;width:270px;max-height:calc(100% - 58px);overflow:auto;padding:13px;border:1px solid #ffffff23;border-radius:16px;background:rgba(var(--panel-top),.98);box-shadow:0 18px 50px #000b;backdrop-filter:blur(28px);scrollbar-width:thin;scrollbar-color:#3c414c transparent}.appearance-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-weight:720}.appearance-title small{color:#8e96a3;font-weight:500}.theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.theme-option{height:38px;border:1px solid #ffffff18;border-radius:10px;background:linear-gradient(140deg,var(--sample-a),var(--sample-b));color:#fff;font-size:10px}.theme-option.active{border-color:var(--accent);box-shadow:0 0 0 2px #ffffff12}.setting-row{display:grid;grid-template-columns:58px minmax(0,1fr) 38px;align-items:center;gap:8px;margin-top:11px;color:#b4bbc5;font-size:11px}.setting-row output{text-align:right;color:#8c94a1}.font-options{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:10px}.font-option{padding:6px 4px;border-radius:8px;background:#ffffff08;color:#929aa6;font-size:10px}.font-option.active{background:#ffffff16;color:#fff}
+      .appearance-panel{position:absolute;z-index:12;top:47px;right:11px;width:270px;max-height:calc(100% - 58px);overflow:auto;padding:13px;border:1px solid #ffffff23;border-radius:16px;background:rgba(var(--panel-top),var(--panel-opacity));box-shadow:0 18px 50px #000b;backdrop-filter:blur(28px);scrollbar-width:thin;scrollbar-color:#3c414c transparent}.appearance-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-weight:720}.appearance-title small{color:#8e96a3;font-weight:500}.theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.theme-option{height:38px;border:1px solid #ffffff18;border-radius:10px;background:linear-gradient(140deg,var(--sample-a),var(--sample-b));color:#fff;font-size:10px}.theme-option.active{border-color:var(--accent);box-shadow:0 0 0 2px #ffffff12}.setting-row{display:grid;grid-template-columns:72px minmax(0,1fr) 38px;align-items:center;gap:8px;margin-top:11px;color:#b4bbc5;font-size:11px}.setting-row output{text-align:right;color:#8c94a1}.font-options{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:10px}.font-option{padding:6px 4px;border-radius:8px;background:#ffffff08;color:#929aa6;font-size:10px}.font-option.active{background:#ffffff16;color:#fff}
       .dock-setting{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding-top:10px;border-top:1px solid #ffffff12;color:#d1d5dc;font-size:11px}.dock-setting input{width:15px;height:15px;accent-color:var(--accent)}.dock-source{margin:7px 0 0;color:#7f8794;font-size:9px;line-height:1.45}.dock-height-row.is-disabled{opacity:.45}.dock-height-row input:disabled{cursor:not-allowed}
-      .spectrum-dock{pointer-events:auto;position:fixed;z-index:4;left:50%;bottom:10px;width:clamp(360px,44vw,720px);height:var(--spectrum-dock-height);min-height:72px;max-height:180px;display:grid;grid-template-columns:minmax(110px,.8fr) minmax(170px,1.9fr) auto;align-items:stretch;gap:12px;padding:10px 12px;border:1px solid #ffffff25;border-radius:20px;background:linear-gradient(145deg,rgba(var(--panel-top),var(--panel-opacity)),rgba(var(--panel-bottom),var(--panel-opacity)));box-shadow:0 20px 65px #000a,inset 0 1px #ffffff12;backdrop-filter:blur(28px) saturate(1.15);transform:translateX(-50%);overflow:hidden}.spectrum-dock-copy{min-width:0;align-self:center}.spectrum-dock-kicker{display:block;margin-bottom:4px;color:var(--accent);font-size:8px;font-weight:800;letter-spacing:.14em}.spectrum-dock-title,.spectrum-dock-meta{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.spectrum-dock-title{font-size:calc(13px * var(--font-scale));font-weight:740}.spectrum-dock-meta{margin-top:3px;color:#8f97a4;font-size:calc(9px * var(--font-scale))}.spectrum-dock-spectrum{position:relative;min-width:0;display:flex;align-items:stretch;gap:2px;padding:4px 0;overflow:hidden}.spectrum-dock-spectrum:after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:linear-gradient(90deg,transparent,#ffffff6b 12%,#ffffff6b 88%,transparent)}.spectrum-dock-bar{position:relative;flex:1;min-width:1px}.spectrum-dock-bar:before,.spectrum-dock-bar:after{content:"";position:absolute;left:0;width:100%;height:var(--h);border-radius:3px;background:linear-gradient(90deg,var(--accent),#fff);box-shadow:0 0 7px var(--accent);opacity:.82;animation:dockPulse .72s ease-in-out calc(var(--i)*-.031s) infinite alternate;animation-play-state:paused}.spectrum-dock-bar:before{bottom:50%;transform-origin:bottom}.spectrum-dock-bar:after{top:50%;transform-origin:top}.playing:not(.live-spectrum) .spectrum-dock-bar:before,.playing:not(.live-spectrum) .spectrum-dock-bar:after,.shell[data-provider="qq"] .spectrum-dock-bar:before,.shell[data-provider="qq"] .spectrum-dock-bar:after{animation-play-state:running}.live-spectrum .spectrum-dock-bar:before,.live-spectrum .spectrum-dock-bar:after{animation:none;transition:height .09s linear,opacity .16s ease}.spectrum-dock-actions{display:flex;align-self:center;align-items:center;gap:2px}.spectrum-dock-actions .icon{width:30px;height:30px;border-radius:10px}.spectrum-dock-actions .toggle{width:36px;height:36px;border-radius:12px}.spectrum-dock-mode{position:absolute;right:12px;bottom:4px;color:#737c89;font-size:8px}.live-spectrum .spectrum-dock-mode{color:var(--accent)}
-      @media(max-width:700px){.spectrum-dock{bottom:8px;width:calc(var(--viewport-width,100vw) - 20px);grid-template-columns:minmax(82px,.62fr) minmax(130px,1.6fr) auto;gap:7px;padding:8px 9px;border-radius:17px}.spectrum-dock-meta,.spectrum-dock-mode{display:none}.spectrum-dock-spectrum{gap:1px}.spectrum-dock-actions .icon{width:27px;height:27px}.spectrum-dock-actions .toggle{width:32px;height:32px}}
+      .spectrum-dock{pointer-events:none;position:fixed;z-index:4;left:50%;bottom:env(safe-area-inset-bottom,0px);width:clamp(520px,62vw,1080px);height:var(--spectrum-dock-height);min-height:72px;max-height:180px;display:grid;grid-template-columns:minmax(120px,.72fr) minmax(260px,2.6fr) auto;align-items:end;gap:14px;padding:0;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none;transform:translateX(-50%);overflow:visible;filter:drop-shadow(0 3px 5px #000b)}.spectrum-dock-copy{min-width:0;align-self:end;margin-bottom:3px;text-shadow:0 1px 2px #000,0 2px 8px #000}.spectrum-dock-kicker{display:block;margin-bottom:4px;color:var(--accent);font-size:8px;font-weight:800;letter-spacing:.14em}.spectrum-dock-title,.spectrum-dock-meta{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.spectrum-dock-title{font-size:calc(13px * var(--font-scale));font-weight:740}.spectrum-dock-meta{margin-top:3px;color:#d4d8df;font-size:calc(9px * var(--font-scale))}.spectrum-dock-spectrum{position:relative;align-self:stretch;min-width:0;display:flex;align-items:stretch;gap:2px;padding:0 0 2px;overflow:hidden}.spectrum-dock-spectrum:after{content:"";position:absolute;left:0;right:0;bottom:1px;height:1px;background:linear-gradient(90deg,transparent,#ffffff9b 12%,#ffffff9b 88%,transparent)}.spectrum-dock-bar{position:relative;flex:1;min-width:1px}.spectrum-dock-bar:before{content:"";position:absolute;left:0;bottom:2px;width:100%;height:var(--h);border-radius:3px 3px 0 0;background:linear-gradient(90deg,var(--accent),#fff);box-shadow:0 0 7px var(--accent),0 1px 3px #000;opacity:.9;transform-origin:bottom;animation:dockPulse .72s ease-in-out calc(var(--i)*-.031s) infinite alternate;animation-play-state:paused}.spectrum-dock-bar:after{display:none}.playing:not(.live-spectrum) .spectrum-dock-bar:before,.shell[data-provider="qq"] .spectrum-dock-bar:before{animation-play-state:running}.live-spectrum .spectrum-dock-bar:before{height:calc(100% - 2px);transform:scaleY(var(--level,.08));animation:none;transition:transform .075s linear,opacity .12s ease}.spectrum-dock-actions{pointer-events:auto;display:flex;align-self:end;align-items:center;gap:2px;margin-bottom:1px;padding:0;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none}.spectrum-dock-actions .icon,.spectrum-dock-actions .icon.toggle,.spectrum-dock-actions .icon:hover{width:30px;height:30px;border:0;border-radius:10px;background:transparent;color:#f7f8fa;box-shadow:none;filter:drop-shadow(0 1px 3px #000)}.spectrum-dock-actions .icon:hover{color:var(--accent);transform:translateY(-1px)}.spectrum-dock-actions .toggle{width:36px;height:36px}.spectrum-dock-actions .icon:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.spectrum-dock-mode{position:absolute;right:58px;bottom:0;color:#e1e4e9;font-size:8px;text-shadow:0 1px 3px #000,0 2px 8px #000}.live-spectrum .spectrum-dock-mode{color:var(--accent)}
+      @media(max-width:700px){.spectrum-dock{bottom:env(safe-area-inset-bottom,0px);width:calc(var(--viewport-width,100vw) - 20px);grid-template-columns:minmax(0,1fr) auto;gap:7px;padding:0}.spectrum-dock-copy,.spectrum-dock-meta,.spectrum-dock-mode{display:none}.spectrum-dock-spectrum{gap:1px}.spectrum-dock-actions .icon{width:27px;height:27px}.spectrum-dock-actions .toggle{width:32px;height:32px}}
       @keyframes spin{to{transform:rotate(360deg)}}@keyframes miniPulse{to{transform:scaleY(.35)}}@keyframes wavePulse{to{height:4px;opacity:.55}}@keyframes bassPulse{to{transform:scaleY(.35);opacity:.78}}@keyframes dockPulse{to{transform:scaleY(.28);opacity:.5}}@keyframes scan{to{transform:translateX(100%)}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}@media(max-width:640px){.panel{width:min(374px,calc(var(--viewport-width,100vw) - 16px));height:min(600px,calc(var(--viewport-height,100vh) - 16px))}.panel-grid{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(150px,284px) minmax(112px,1fr)}.player-column{min-height:0;border-right:0;border-bottom:1px solid #ffffff10;overflow:auto}.visual-stage{height:144px;flex-basis:144px}.browser-column{min-height:112px}.appearance-panel{width:min(270px,calc(100% - 22px))}}@media(max-width:640px) and (max-height:450px){.panel-head{flex-basis:42px}.panel-grid{grid-template-rows:minmax(132px,46%) minmax(112px,1fr)}.player-column{padding:7px 10px}.visual-stage{height:118px;flex-basis:118px}}@media(max-height:450px) and (min-width:641px){.panel{height:calc(var(--viewport-height,100vh) - 12px)}.panel-head{flex-basis:46px}.player-column{padding-top:8px}.visual-stage{height:146px;flex-basis:146px}.appearance-panel{top:42px}}
     </style>
     <div class="shell right paused" data-provider="netease" data-theme="obsidian">
@@ -61,7 +61,7 @@
       <div class="dock"><button class="icon" data-control="prev" aria-label="上一首">${svg.prev}</button><button class="icon toggle" data-toggle aria-label="播放或暂停"><span class="play-glyph">${svg.play}</span><span class="pause-glyph">${svg.pause}</span></button><button class="icon" data-control="next" aria-label="下一首">${svg.next}</button><button class="icon panel-button" data-open-panel aria-label="展开播放器">${svg.panel}</button></div>
       <section class="panel" aria-label="CloudMusic Edge 播放器">
         <header class="panel-head"><span class="brand">CLOUDMUSIC EDGE</span><div class="head-actions"><button class="provider">网易云</button><button class="head-icon appearance-toggle" aria-label="外观设置">${svg.palette}</button><button class="head-icon close-panel" aria-label="关闭播放器">${svg.close}</button></div></header>
-        <aside class="appearance-panel hidden" aria-label="外观设置"><div class="appearance-title"><span>外观</span><small>即时保存</small></div><div class="theme-grid"><button class="theme-option active" data-theme-option="obsidian" style="--sample-a:#242831;--sample-b:#0b0e12">曜石</button><button class="theme-option" data-theme-option="frost" style="--sample-a:#33435d;--sample-b:#111821">雾蓝</button><button class="theme-option" data-theme-option="jade" style="--sample-a:#1d4941;--sample-b:#091413">墨绿</button><button class="theme-option" data-theme-option="dusk" style="--sample-a:#533a56;--sample-b:#171018">暮色</button></div><label class="setting-row"><span>透明度</span><input class="appearance-opacity range" type="range" min="68" max="100" value="96"><output class="opacity-value">96%</output></label><div class="font-options"><button class="font-option active" data-font="modern">现代</button><button class="font-option" data-font="rounded">圆润</button><button class="font-option" data-font="serif">衬线</button></div><label class="setting-row"><span>文字大小</span><input class="appearance-size range" type="range" min="90" max="112" value="100"><output class="size-value">100%</output></label><label class="dock-setting"><span>页面底部频谱</span><input class="appearance-dock" type="checkbox"></label><label class="setting-row dock-height-row is-disabled"><span>频谱高度</span><input class="appearance-dock-height range" type="range" min="72" max="180" value="112" disabled><output class="dock-height-value">112px</output></label><p class="dock-source">音源：当前音乐（不采集系统声音）</p></aside>
+        <aside class="appearance-panel hidden" aria-label="外观设置"><div class="appearance-title"><span>外观</span><small>即时保存</small></div><div class="theme-grid"><button class="theme-option active" data-theme-option="obsidian" style="--sample-a:#242831;--sample-b:#0b0e12">曜石</button><button class="theme-option" data-theme-option="frost" style="--sample-a:#33435d;--sample-b:#111821">雾蓝</button><button class="theme-option" data-theme-option="jade" style="--sample-a:#1d4941;--sample-b:#091413">墨绿</button><button class="theme-option" data-theme-option="dusk" style="--sample-a:#533a56;--sample-b:#171018">暮色</button></div><label class="setting-row"><span>背景不透明度</span><input class="appearance-opacity range" type="range" min="32" max="100" value="96"><output class="opacity-value">96%</output></label><div class="font-options"><button class="font-option active" data-font="modern">现代</button><button class="font-option" data-font="rounded">圆润</button><button class="font-option" data-font="serif">衬线</button></div><label class="setting-row"><span>文字大小</span><input class="appearance-size range" type="range" min="90" max="112" value="100"><output class="size-value">100%</output></label><label class="dock-setting"><span>页面底部频谱</span><input class="appearance-dock" type="checkbox"></label><label class="setting-row dock-height-row is-disabled"><span>频谱高度</span><input class="appearance-dock-height range" type="range" min="72" max="180" value="112" disabled><output class="dock-height-value">112px</output></label><p class="dock-source">音源：当前音乐（不采集系统声音）</p></aside>
         <div class="panel-grid">
           <section class="player-column">
             <div class="visual-stage" aria-label="播放状态视觉效果"><i class="visual-glow"></i><div class="now"><div class="disc"></div><div class="track"><div class="track-title">尚未播放</div><div class="track-meta">搜索一首歌，轻轻开始</div></div><span class="state-pill">已暂停</span></div><div class="waveform" aria-hidden="true">${waveBars}</div><div class="bass-bars" aria-hidden="true">${bassBars}</div><span class="spectrum-pill">状态动画</span></div>
@@ -123,6 +123,7 @@
   let appearance = { theme: "obsidian", opacity: 96, font: "modern", size: 100, dockEnabled: false, dockHeight: 112 };
   let state = { status: "paused", position: 0, duration: 0, volume: 70, title: "", meta: "", queueLength: 0 };
   let drag;
+  let snapSide = "right";
   let suppressClick = false;
   let pollTimer;
   let visualizerTimer;
@@ -139,7 +140,8 @@
     return response.data;
   };
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-  const savePosition = () => chrome.storage.local.set({ [`float:${location.origin}`]: { left: parseFloat(host.style.left), top: parseFloat(host.style.top) } });
+  const edgeSnapDistance = 64;
+  const savePosition = () => chrome.storage.local.set({ [`float:${location.origin}`]: { left: parseFloat(host.style.left), top: parseFloat(host.style.top), snapSide } });
   const cacheKey = (sourceProvider = provider, type = searchType) => `${sourceProvider}:${type}`;
   const playlistKey = (item) => `${item.provider}:${item.encryptedId || item.playlistId}`;
   const visualizerClientId = typeof crypto.randomUUID === "function" ? crypto.randomUUID() : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (token) => {
@@ -154,7 +156,10 @@
     renderProvider();
     const pos = data[`float:${location.origin}`];
     if (pos) {
-      host.style.left = `${clamp(Number(pos.left) || 6, 6, viewportWidth() - 50)}px`;
+      snapSide = pos.snapSide === "left" || pos.snapSide === "right" ? pos.snapSide : null;
+      if (!snapSide && Number(pos.left) <= 7) snapSide = "left";
+      if (!snapSide && Number(pos.left) >= viewportWidth() - 51) snapSide = "right";
+      host.style.left = `${snapSide === "left" ? 6 : snapSide === "right" ? viewportWidth() - 50 : clamp(Number(pos.left) || 6, 0, viewportWidth() - 44)}px`;
       host.style.top = `${clamp(Number(pos.top) || 100, 6, viewportHeight() - 50)}px`;
       updateSide();
     }
@@ -167,7 +172,7 @@
     const next = raw && typeof raw === "object" ? raw : {};
     return {
       theme: themes.includes(next.theme) ? next.theme : "obsidian",
-      opacity: clamp(Number(next.opacity) || 96, 68, 100),
+      opacity: clamp(Number(next.opacity) || 96, 32, 100),
       font: fonts[next.font] ? next.font : "modern",
       size: clamp(Number(next.size) || 100, 90, 112),
       dockEnabled: next.dockEnabled === true,
@@ -335,7 +340,7 @@
         renderVisualizerBands(data.bands);
         shell.classList.add("live-spectrum");
         renderSpectrumMode();
-        visualizerTimer = setTimeout(readVisualizer, 100);
+        visualizerTimer = setTimeout(readVisualizer, 80);
       }
     } catch {}
     finally { if (generation === visualizerGeneration) visualizerPending = false; }
@@ -350,16 +355,25 @@
       visualizerAttached = Boolean(data?.attached);
       if (!data?.available) throw new Error("频段数据尚未就绪");
       renderVisualizerBands(data.bands);
-      visualizerTimer = setTimeout(readVisualizer, 100);
+      visualizerTimer = setTimeout(readVisualizer, 80);
     } catch {
       if (generation === visualizerGeneration) stopVisualizer();
     } finally { if (generation === visualizerGeneration) visualizerPending = false; }
   }
   function renderVisualizerBands(rawBands) {
     if (!Array.isArray(rawBands) || rawBands.length !== 10) return;
-    rawBands.forEach((raw, index) => {
-      const target = Math.pow(clamp((Number(raw) + 72) / 58, 0, 1), .72);
-      const weight = target > visualizerLevels[index] ? .66 : .2;
+    const decibels = rawBands.map((raw) => {
+      const value = Number(raw);
+      return Number.isFinite(value) ? clamp(value, -90, 0) : -90;
+    });
+    const peak = Math.max(...decibels);
+    const floor = Math.max(-82, peak - 40);
+    const span = Math.max(16, peak - floor);
+    const energy = clamp((peak + 72) / 54, 0, 1);
+    decibels.forEach((decibel, index) => {
+      const relative = clamp((decibel - floor) / span, 0, 1);
+      const target = Math.pow(relative, 1.55) * Math.pow(energy, .65);
+      const weight = target > visualizerLevels[index] ? .82 : .28;
       visualizerLevels[index] += (target - visualizerLevels[index]) * weight;
     });
     const sample = (position) => {
@@ -380,7 +394,7 @@
     });
     root.querySelectorAll(".spectrum-dock-bar").forEach((bar, index, bars) => {
       const level = sample(index / Math.max(1, bars.length - 1));
-      bar.style.setProperty("--h", `${4 + level * 42}%`);
+      bar.style.setProperty("--level", String(.03 + level * .97));
       bar.style.opacity = String(.58 + level * .42);
     });
   }
@@ -446,15 +460,17 @@
   }
   function renderItems(container, items, source) {
     container.replaceChildren();
-    if (!items.length) return empty(container, "这里还是空的", source === "library" ? "登录账号还没有相关内容" : source === "playlist" ? "该歌单暂时没有可播放歌曲" : "换个关键词试试");
+    if (!items.length) return empty(container, "这里还是空的", source === "library" ? "登录账号还没有相关内容" : source === "playlist" ? "该歌单暂无歌曲" : "换个关键词试试");
     items.forEach((item, index) => {
       const button = document.createElement("button");
-      button.className = "item";
-      button.disabled = item.visible === false;
+      button.className = `item${item.canPlay === false ? " is-unavailable" : item.availability === "trial" ? " is-trial" : ""}`;
+      button.disabled = item.canPlay === false;
       button.innerHTML = `<span class="index"></span><span class="grow"><span class="title"></span><span class="meta"></span></span><span class="item-icon">›</span>`;
       button.querySelector(".index").textContent = item.kind === "playlist" ? "歌单" : String(index + 1).padStart(2, "0");
       button.querySelector(".title").textContent = item.title;
-      button.querySelector(".meta").textContent = item.visible === false ? `${item.meta} · 暂不可播` : item.meta;
+      button.querySelector(".meta").textContent = item.kind === "song" && item.availability !== "playable" && item.reasonText ? `${item.meta} · ${item.reasonText}` : item.meta;
+      button.querySelector(".item-icon").textContent = item.canPlay === false ? "×" : item.availability === "trial" ? "试听" : "›";
+      if (item.canPlay === false) button.title = item.reasonText || "当前不可播放";
       button.addEventListener("click", () => activateItem(item, source));
       container.appendChild(button);
     });
@@ -486,6 +502,26 @@
     const candidates = arrays(data).filter((list) => list.some((item) => item && typeof item === "object" && (kind === "song" ? (item.songMid || item.songName) : (item.dissId || item.dissName))));
     return candidates.sort((a, b) => b.length - a.length)[0] || [];
   }
+  function neteaseAvailability(item) {
+    if (item?.visible === false) return { availability: "blocked", playMode: null, reasonCode: "copyright", reasonText: "当前端无版权", canPlay: false };
+    if (item?.playFlag === true) return { availability: "playable", playMode: "full", reasonCode: "full", reasonText: "完整播放", canPlay: true };
+    if (item?.resConsumable === true && item?.userConsumable === true) return { availability: "trial", playMode: "full_trial", reasonCode: "full_trial", reasonText: "试听", canPlay: true };
+    if (item?.freeTrailFlag === true) return { availability: "trial", playMode: "segment_trial", reasonCode: "segment_trial", reasonText: "片段试听", canPlay: true };
+    if (Number(item?.songFee) === 1) return { availability: "blocked", playMode: null, reasonCode: "vip", reasonText: "需要音乐会员", canPlay: false };
+    if (Number(item?.songFee) === 4) return { availability: "blocked", playMode: null, reasonCode: "digital_album", reasonText: "需购买数字专辑", canPlay: false };
+    return { availability: "unknown", playMode: null, reasonCode: "permission", reasonText: "播放状态未知", canPlay: false };
+  }
+  function artistText(item) {
+    const artists = item.artists || item.fullArtists || [];
+    if (typeof artists === "string") return artists;
+    return Array.isArray(artists) ? artists.map((artist) => typeof artist === "string" ? artist : artist?.name).filter(Boolean).join(" / ") : "";
+  }
+  function availabilitySummary(items) {
+    const tracks = items.filter((item) => item.kind === "song");
+    if (!tracks.length) return `${items.length} 项`;
+    const playable = tracks.filter((item) => item.canPlay !== false).length;
+    return `已加载 ${tracks.length} · 可播 ${playable} · 暂不可播 ${tracks.length - playable}`;
+  }
   function normalize(data) {
     const kind = arguments[1] || searchType;
     const sourceProvider = arguments[2] || provider;
@@ -506,7 +542,15 @@
     const body = payload?.data || payload;
     const explicit = Array.isArray(body) ? body : body?.records || body?.songs || body?.playlists;
     const list = explicit || arrays(payload).sort((a, b) => b.length - a.length)[0] || [];
-    return list.map((x) => ({ provider: sourceProvider, kind, title: x.name || x.songName || x.playlistName || x.title || "未命名", meta: x.artistName || x.singerName || (x.artists || x.fullArtists || []).map((artist) => artist?.name).filter(Boolean).join(" / ") || x.creatorNickName || x.creatorName || x.description || `${Number(x.trackCount) || 0} 首`, encryptedId: x.encryptedId || x.encrypted_id || x.id || x.resourceId, originalId: String(x.originalId || x.original_id || x.originId || x.rawId || ""), trackCount: Number(x.trackCount) || 0, visible: x.visible !== false && x.playFlag !== false && x.plLevel !== "none" })).filter((x) => x.encryptedId && x.visible);
+    return list.map((x) => {
+      const encryptedId = x.encryptedId || x.encrypted_id || x.id || x.resourceId || "";
+      const originalId = String(x.originalId || x.original_id || x.originId || x.rawId || "");
+      let access = kind === "song" ? neteaseAvailability(x) : { availability: "playable", playMode: "full", reasonCode: "playlist", reasonText: "打开歌单", canPlay: true };
+      if (kind === "song" && (!/^[a-f\d]{32}$/i.test(String(encryptedId)) || !/^\d{1,20}$/.test(originalId))) {
+        access = { availability: "unknown", playMode: null, reasonCode: "identity", reasonText: "资源标识不完整", canPlay: false };
+      }
+      return { provider: sourceProvider, kind, title: x.name || x.songName || x.playlistName || x.title || "未命名", meta: x.artistName || x.singerName || artistText(x) || x.creatorNickName || x.creatorName || x.description || `${Number(x.trackCount) || 0} 首`, encryptedId: String(encryptedId), originalId, trackCount: Number(x.trackCount) || 0, visible: access.canPlay, ...access };
+    }).filter((x) => kind === "playlist" ? x.encryptedId : true);
   }
   function normalizeLibrary(data, kind) {
     const payload = payloadOf(data);
@@ -536,7 +580,7 @@
       const data = await native(`${requestedProvider}.search`, { keyword, type: requestedType });
       if (latestSearchRequest.get(requestedKey) !== requestId) return;
       const items = normalize(data, requestedType, requestedProvider);
-      const entry = { keyword, items, message: items.length ? `找到 ${items.length} 项 · 已缓存此分类` : "没有找到结果" };
+      const entry = { keyword, items, message: items.length ? `${availabilitySummary(items)} · 已缓存此分类` : "没有找到结果" };
       searchCache.set(requestedKey, entry);
       if (cacheKey() !== requestedKey || activePlaylistKey) return;
       searchMessage.textContent = entry.message;
@@ -553,9 +597,10 @@
     const raw = Array.isArray(body) ? body : (body?.records || []);
     return { raw, total: Number(body?.recordCount) || raw.length };
   }
-  function libraryStatus(type, loaded, total) {
+  function libraryStatus(type, items, total) {
     const label = type === "favorite" ? "喜欢的歌曲" : type === "created" ? "我创建的歌单" : "我收藏的歌单";
-    return `${label} · ${loaded}${total > loaded ? ` / ${total}` : ""}`;
+    const loaded = items.length;
+    return type === "favorite" ? `${label} · ${availabilitySummary(items)}${total > loaded ? ` / 共 ${total}` : ""}` : `${label} · ${loaded}${total > loaded ? ` / ${total}` : ""}`;
   }
   function renderLibraryEntry(type, entry) {
     libraryMessage.textContent = entry.message;
@@ -593,7 +638,7 @@
       }
       if (latestLibraryRequest.get(requestedType) !== requestId) return;
       const entry = { items, favoritePlaylist, offset: batch.raw.length, total: batch.total, hasMore: batch.raw.length > 0 && batch.raw.length < batch.total, scrollTop: 0 };
-      entry.message = libraryStatus(requestedType, entry.items.length, entry.total);
+      entry.message = libraryStatus(requestedType, entry.items, entry.total);
       libraryCache.set(requestedType, entry);
       if (libraryType === requestedType && viewMode === "library" && !activePlaylistKey) renderLibraryEntry(requestedType, entry);
     } catch (error) {
@@ -619,11 +664,10 @@
       if (latestLibraryRequest.get(requestedType) !== requestId) return;
       const batch = libraryBatch(data);
       const additions = requestedType === "favorite" ? normalize(data, "song", "netease") : normalizeLibrary(data, requestedType);
-      const existing = new Set(entry.items.map((item) => `${item.kind}:${item.encryptedId}:${item.originalId}`));
-      entry.items.push(...additions.filter((item) => !existing.has(`${item.kind}:${item.encryptedId}:${item.originalId}`)));
+      mergeUnique(entry.items, additions);
       entry.offset += batch.raw.length;
       entry.hasMore = batch.raw.length > 0 && entry.offset < entry.total;
-      entry.message = libraryStatus(requestedType, entry.items.length, entry.total);
+      entry.message = libraryStatus(requestedType, entry.items, entry.total);
       if (libraryType === requestedType && viewMode === "library" && !activePlaylistKey) renderLibraryEntry(requestedType, entry);
     } catch (error) {
       if (latestLibraryRequest.get(requestedType) === requestId && libraryType === requestedType && viewMode === "library" && !activePlaylistKey) {
@@ -634,9 +678,13 @@
     }
   }
   function mergeUnique(target, additions) {
-    const existing = new Set(target.map((item) => `${item.kind}:${item.encryptedId || item.mid}:${item.originalId || item.url}`));
-    target.push(...additions.filter((item) => {
-      const key = `${item.kind}:${item.encryptedId || item.mid}:${item.originalId || item.url}`;
+    const identity = (item, index) => {
+      const stable = item.encryptedId || item.originalId || item.mid || item.url;
+      return stable ? `${item.kind}:${stable}` : `${item.kind}:unidentified:${index}:${item.title}\u0000${item.meta}`;
+    };
+    const existing = new Set(target.map((item, index) => identity(item, index)));
+    target.push(...additions.filter((item, index) => {
+      const key = identity(item, target.length + index);
       if (existing.has(key)) return false;
       existing.add(key);
       return true;
@@ -727,7 +775,7 @@
       const pageSize = entry.playlist.provider === "qq" ? 20 : 80;
       entry.hasMore = rawCount > 0 && (entry.total > 0 ? entry.offset < entry.total : rawCount >= pageSize);
       entry.loaded = true;
-      entry.message = `${entry.items.length}${entry.total > entry.items.length ? ` / ${entry.total}` : ""} 首 · 点击歌曲播放`;
+      entry.message = `${availabilitySummary(entry.items)}${entry.total > entry.items.length ? ` / 共 ${entry.total}` : ""} · 点击可播歌曲`;
       if (activePlaylistKey === key) showPlaylist(entry);
     } catch (error) {
       if (latestPlaylistRequest.get(key) !== requestId || activePlaylistKey !== key) return;
@@ -743,21 +791,27 @@
         window.open(`https://y.qq.com/n/ryqq/playlist/${encodeURIComponent(item.playlistId)}`, "_blank", "noopener");
         return;
       }
-      await native("netease.playPlaylist", item);
-      playlistMessage.textContent = `正在播放歌单：${item.title}`;
-      await refreshState();
+      const result = await native("netease.playPlaylist", item);
+      state = { ...state, ...parseState(result) };
+      renderState();
+      playlistMessage.textContent = `正在播放：${state.title || item.title}`;
     } catch (error) { playlistMessage.textContent = error.message; }
   }
   async function activateItem(item) {
     if (item.kind === "playlist") return openPlaylist(item);
+    if (item.canPlay === false) {
+      visibleMessage().textContent = item.reasonText || "当前歌曲不可播放";
+      return;
+    }
     try {
       if (item.provider === "qq") {
         window.open(officialQqUrl(item.url, item.mid), "_blank", "noopener");
         return;
       }
-      await native("netease.play", item);
-      visibleMessage().textContent = `正在播放：${item.title}`;
-      await refreshState();
+      const result = await native("netease.play", item);
+      state = { ...state, ...parseState(result) };
+      renderState();
+      visibleMessage().textContent = `${result?.payload?.message || "正在播放"}：${state.title || item.title}`;
     } catch (error) { visibleMessage().textContent = error.message; }
   }
 
@@ -786,7 +840,21 @@
   function finishDrag() {
     if (!drag) return;
     suppressClick = drag.moved;
-    host.style.left = `${host.getBoundingClientRect().left < viewportWidth() / 2 ? 6 : viewportWidth() - 50}px`;
+    const rect = host.getBoundingClientRect();
+    const leftDistance = rect.left;
+    const rightDistance = viewportWidth() - rect.right;
+    let restingLeft;
+    if (leftDistance <= edgeSnapDistance) {
+      restingLeft = 6;
+      snapSide = "left";
+    } else if (rightDistance <= edgeSnapDistance) {
+      restingLeft = viewportWidth() - 50;
+      snapSide = "right";
+    } else {
+      restingLeft = clamp(rect.left, 0, viewportWidth() - 44);
+      snapSide = null;
+    }
+    host.style.left = `${restingLeft}px`;
     updateSide();
     savePosition();
     drag = null;
@@ -867,7 +935,7 @@
   document.addEventListener("visibilitychange", () => { if (document.hidden) stopVisualizer(); else syncVisualizer(); });
   addEventListener("resize", () => {
     syncViewportStyles();
-    host.style.left = `${shell.classList.contains("left") ? 6 : viewportWidth() - 50}px`;
+    host.style.left = `${snapSide === "left" ? 6 : snapSide === "right" ? viewportWidth() - 50 : clamp(parseFloat(host.style.left) || 6, 0, viewportWidth() - 44)}px`;
     host.style.top = `${clamp(parseFloat(host.style.top) || 100, 5, viewportHeight() - 49)}px`;
     updateSide();
   });

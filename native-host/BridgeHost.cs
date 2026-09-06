@@ -19,7 +19,7 @@ namespace CloudMusicEdge
 {
     internal static class BridgeHost
     {
-        private const string Version = "0.5.0";
+        private const string Version = "0.6.0";
         private const string QqBaseUrl = "https://a.y.qq.com";
         private const string QqSkillVersion = "0.0.3";
         private static readonly JavaScriptSerializer Json = new JavaScriptSerializer { MaxJsonLength = 8 * 1024 * 1024 };
@@ -265,12 +265,29 @@ namespace CloudMusicEdge
         {
             string encrypted = RequireEncryptedId(payload, "encryptedId");
             string original = RequireNumericId(payload, "originalId");
-            var queue = new ArrayList { Track(encrypted, original, GetString(payload, "title", 200, false), GetString(payload, "meta", 300, false)) };
-            SavePlayerState(queue, 0, 50, "loading");
+            object canPlay;
+            if (payload.TryGetValue("canPlay", out canPlay) && canPlay is bool && !(bool)canPlay)
+            {
+                string reason = GetString(payload, "reasonText", 100, false);
+                throw new UserError(String.IsNullOrWhiteSpace(reason) ? "当前歌曲不可播放" : reason);
+            }
+            var state = LoadPlayerState();
+            MpvSnapshot previous;
+            try { previous = SyncCurrentTrackFromNcmState(state); }
+            catch (UserError) { previous = ReadMpvSnapshot(); }
+            string previousTitle = Value(state, "title");
             RunNcm(new[] { "play", "--song", "--encrypted-id", encrypted, "--original-id", original }, 30000);
-            WaitForMpv();
-            SavePlayerState(queue, 0, 50, "playing");
-            return ManagedStateResult(LoadPlayerState(), "开始播放");
+            WaitForMpvTrackChange(previous, previousTitle);
+            SyncCurrentTrackFromNcmState(state);
+            SavePlayerState(state);
+            string requestedTitle = GetString(payload, "title", 200, false);
+            string actualTitle = Value(state, "title");
+            bool requestedMatches = String.Equals(requestedTitle, actualTitle, StringComparison.OrdinalIgnoreCase) ||
+                (!String.IsNullOrWhiteSpace(requestedTitle) && actualTitle.StartsWith(requestedTitle + " - ", StringComparison.OrdinalIgnoreCase));
+            string message = !String.IsNullOrWhiteSpace(requestedTitle) && !requestedMatches
+                ? "请求曲目不可播放，官方播放器已跳至实际可用曲目"
+                : "开始播放";
+            return ManagedStateResult(state, message);
         }
 
         private static object NeteaseQueueAdd(Dictionary<string, object> payload)
@@ -284,32 +301,16 @@ namespace CloudMusicEdge
         {
             string encrypted = RequireEncryptedId(payload, "encryptedId");
             string original = RequireNumericId(payload, "originalId");
-            var result = RunNcm(new[] { "playlist", "tracks", "--playlistId", encrypted, "--limit", "500" }, 45000) as Dictionary<string, object>;
-            var root = result == null ? null : result["payload"] as Dictionary<string, object>;
-            object rawData;
-            var queue = new ArrayList();
-            if (root != null && root.TryGetValue("data", out rawData))
-            {
-                var items = rawData as IEnumerable;
-                if (items != null)
-                {
-                    foreach (object raw in items)
-                    {
-                        var item = raw as Dictionary<string, object>;
-                        if (item == null || !IsPlayable(item)) continue;
-                        string id = Value(item, "id");
-                        string originalId = Value(item, "originalId");
-                        if (!EncryptedId.IsMatch(id) || !NumericId.IsMatch(originalId)) continue;
-                        queue.Add(Track(id, originalId, Value(item, "name"), ArtistNames(item)));
-                    }
-                }
-            }
-            if (queue.Count == 0) throw new UserError("歌单中没有可播放的歌曲");
-            SavePlayerState(queue, 0, 50, "loading");
+            var state = LoadPlayerState();
+            MpvSnapshot previous;
+            try { previous = SyncCurrentTrackFromNcmState(state); }
+            catch (UserError) { previous = ReadMpvSnapshot(); }
+            string previousTitle = Value(state, "title");
             RunNcm(new[] { "play", "--playlist", "--encrypted-id", encrypted, "--original-id", original }, 30000);
-            WaitForMpv();
-            SavePlayerState(queue, 0, 50, "playing");
-            return ManagedStateResult(LoadPlayerState(), "歌单已开始播放");
+            WaitForMpvTrackChange(previous, previousTitle);
+            SyncCurrentTrackFromNcmState(state);
+            SavePlayerState(state);
+            return ManagedStateResult(state, "歌单已开始播放");
         }
 
         private static object NeteaseControl(Dictionary<string, object> payload)
@@ -319,24 +320,35 @@ namespace CloudMusicEdge
             switch (name)
             {
                 case "pause":
+                    if (GetMpvProperty("path") == null) throw new UserError("当前没有正在播放的内容");
                     SendMpv(new object[] { "set_property", "pause", true });
                     state["status"] = "paused"; SavePlayerState(state); return ManagedStateResult(state, "已暂停");
                 case "resume":
+                    if (GetMpvProperty("path") == null) throw new UserError("当前没有可继续播放的内容");
                     SendMpv(new object[] { "set_property", "pause", false });
                     state["status"] = "playing"; SavePlayerState(state); return ManagedStateResult(state, "继续播放");
                 case "stop":
                     RunNcm(new[] { "stop" }, 12000);
-                    state["status"] = "stopped"; state["position"] = 0; SavePlayerState(state); return ManagedStateResult(state, "已停止播放");
+                    try { SyncCurrentTrackFromNcmState(state); }
+                    catch (UserError) { state["status"] = "stopped"; state["position"] = 0; state["duration"] = 0; state["title"] = ""; state["meta"] = ""; }
+                    SavePlayerState(state); return ManagedStateResult(state, "已停止播放");
                 case "next": return MoveManagedTrack(state, 1);
                 case "prev": return MoveManagedTrack(state, -1);
                 case "state":
-                    object pausedValue = GetMpvProperty("pause");
-                    bool? paused = pausedValue is bool ? (bool?)pausedValue : null;
-                    state["status"] = !paused.HasValue ? "stopped" : paused.Value ? "paused" : "playing";
-                    object position = GetMpvProperty("time-pos");
-                    object duration = GetMpvProperty("duration");
-                    state["position"] = position ?? 0;
-                    state["duration"] = duration ?? 0;
+                    MpvSnapshot snapshot = ReadMpvSnapshot();
+                    ApplyMpvPlaybackState(state, snapshot);
+                    if (IdentityRefreshDue(state, snapshot.Path, snapshot.PlaylistPosition))
+                    {
+                        try { SyncCurrentTrackFromNcmState(state); }
+                        catch (UserError)
+                        {
+                            if (!String.Equals(Value(state, "mpvPath"), Scalar(snapshot.Path), StringComparison.Ordinal))
+                            {
+                                state["title"] = "";
+                                state["meta"] = snapshot.Path == null ? "" : "正在同步实际播放曲目";
+                            }
+                        }
+                    }
                     SavePlayerState(state); return ManagedStateResult(state, "状态已刷新");
                 case "seek":
                     int seek = GetInt(payload, "value", 0, 86400);
@@ -669,39 +681,10 @@ namespace CloudMusicEdge
             }
         }
 
-        private static Dictionary<string, object> Track(string encryptedId, string originalId, string title, string meta)
-        {
-            return Map("encryptedId", encryptedId, "originalId", originalId, "title", title, "meta", meta);
-        }
-
         private static string Value(Dictionary<string, object> map, string name, string fallback = "")
         {
             object raw;
             return map != null && map.TryGetValue(name, out raw) && raw != null ? Convert.ToString(raw) : fallback;
-        }
-
-        private static bool IsPlayable(Dictionary<string, object> item)
-        {
-            object raw;
-            if (item.TryGetValue("visible", out raw) && raw is bool && !(bool)raw) return false;
-            if (item.TryGetValue("playFlag", out raw) && raw is bool && !(bool)raw) return false;
-            return !String.Equals(Value(item, "plLevel"), "none", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static string ArtistNames(Dictionary<string, object> item)
-        {
-            object raw;
-            if (!item.TryGetValue("artists", out raw)) item.TryGetValue("fullArtists", out raw);
-            var artists = raw as IEnumerable;
-            if (artists == null) return Value(item, "artistName");
-            var names = new List<string>();
-            foreach (object artist in artists)
-            {
-                var map = artist as Dictionary<string, object>;
-                string name = Value(map, "name");
-                if (!String.IsNullOrWhiteSpace(name)) names.Add(name);
-            }
-            return String.Join(" / ", names.ToArray());
         }
 
         private static Dictionary<string, object> LoadPlayerState()
@@ -716,13 +699,6 @@ namespace CloudMusicEdge
             }
             catch { }
             return Map("queue", new ArrayList(), "currentIndex", 0, "volume", 50, "status", "stopped", "title", "", "meta", "");
-        }
-
-        private static void SavePlayerState(ArrayList queue, int index, int volume, string status)
-        {
-            var track = queue[index] as Dictionary<string, object>;
-            SavePlayerState(Map("queue", queue, "currentIndex", index, "volume", volume, "status", status,
-                "title", Value(track, "title"), "meta", Value(track, "meta")));
         }
 
         private static void SavePlayerState(Dictionary<string, object> state)
@@ -747,29 +723,129 @@ namespace CloudMusicEdge
 
         private static object MoveManagedTrack(Dictionary<string, object> state, int delta)
         {
-            var queue = new ArrayList();
-            object rawQueue;
-            var items = state.TryGetValue("queue", out rawQueue) ? rawQueue as IEnumerable : null;
-            if (items != null) foreach (object item in items) queue.Add(item);
-            if (queue.Count == 0) throw new UserError("当前播放队列为空");
-            int index;
-            if (!Int32.TryParse(Value(state, "currentIndex", "0"), out index)) index = 0;
-            index = (index + delta + queue.Count) % queue.Count;
-            int volume;
-            if (!Int32.TryParse(Value(state, "volume", "50"), out volume)) volume = 50;
+            MpvSnapshot previous;
+            try { previous = SyncCurrentTrackFromNcmState(state); }
+            catch (UserError) { previous = ReadMpvSnapshot(); }
+            string previousTitle = Value(state, "title");
             RunNcm(new[] { delta > 0 ? "next" : "prev" }, 12000);
-            SavePlayerState(queue, index, volume, "playing");
-            return ManagedStateResult(LoadPlayerState(), delta > 0 ? "下一首" : "上一首");
+            WaitForMpvTrackChange(previous, previousTitle);
+            SyncCurrentTrackFromNcmState(state);
+            SavePlayerState(state);
+            return ManagedStateResult(state, delta > 0 ? "下一首" : "上一首");
         }
 
-        private static void WaitForMpv()
+        private sealed class MpvSnapshot
         {
-            for (int i = 0; i < 50; i++)
+            public object Path;
+            public object PlaylistPosition;
+            public object Paused;
+            public object Position;
+            public object Duration;
+        }
+
+        private static MpvSnapshot ReadMpvSnapshot()
+        {
+            var snapshot = new MpvSnapshot();
+            snapshot.Path = GetMpvProperty("path");
+            if (snapshot.Path == null) return snapshot;
+            snapshot.PlaylistPosition = GetMpvProperty("playlist-pos");
+            snapshot.Paused = GetMpvProperty("pause");
+            snapshot.Position = GetMpvProperty("time-pos");
+            snapshot.Duration = GetMpvProperty("duration");
+            return snapshot;
+        }
+
+        private static bool SameMpvIdentity(MpvSnapshot first, MpvSnapshot second)
+        {
+            return String.Equals(Scalar(first == null ? null : first.Path), Scalar(second == null ? null : second.Path), StringComparison.Ordinal) &&
+                String.Equals(Scalar(first == null ? null : first.PlaylistPosition), Scalar(second == null ? null : second.PlaylistPosition), StringComparison.Ordinal);
+        }
+
+        private static void ApplyMpvPlaybackState(Dictionary<string, object> state, MpvSnapshot snapshot)
+        {
+            bool? paused = snapshot != null && snapshot.Paused is bool ? (bool?)snapshot.Paused : null;
+            state["status"] = snapshot == null || snapshot.Path == null || !paused.HasValue ? "stopped" : paused.Value ? "paused" : "playing";
+            state["position"] = snapshot == null ? 0 : snapshot.Position ?? 0;
+            state["duration"] = snapshot == null ? 0 : snapshot.Duration ?? 0;
+        }
+
+        private static MpvSnapshot WaitForMpvTrackChange(MpvSnapshot previous, string previousTitle)
+        {
+            DateTime deadline = DateTime.UtcNow.AddSeconds(8);
+            DateTime sameMediaReadyAt = DateTime.UtcNow.AddMilliseconds(1200);
+            bool sameMediaChecked = false;
+            while (DateTime.UtcNow < deadline)
             {
-                if (IsMpvReady()) return;
+                MpvSnapshot current = ReadMpvSnapshot();
+                if (current.Path != null)
+                {
+                    bool pathChanged = !String.Equals(Scalar(previous == null ? null : previous.Path), Scalar(current.Path), StringComparison.Ordinal);
+                    if (pathChanged) return current;
+                    if (!sameMediaChecked && DateTime.UtcNow >= sameMediaReadyAt && !String.IsNullOrWhiteSpace(previousTitle))
+                    {
+                        sameMediaChecked = true;
+                        var probe = new Dictionary<string, object>();
+                        try
+                        {
+                            MpvSnapshot verified = SyncCurrentTrackFromNcmState(probe);
+                            if (!String.Equals(Scalar(previous == null ? null : previous.Path), Scalar(verified.Path), StringComparison.Ordinal)) return verified;
+                            if (String.Equals(previousTitle, Value(probe, "title"), StringComparison.OrdinalIgnoreCase)) return verified;
+                        }
+                        catch (UserError) { }
+                    }
+                }
                 Thread.Sleep(100);
             }
-            throw new UserError("官方播放器尚未就绪，请重试一次");
+            throw new UserError("官方播放器尚未完成切换，请重试一次");
+        }
+
+        private static string Scalar(object value)
+        {
+            return value == null ? "" : Convert.ToString(value, CultureInfo.InvariantCulture);
+        }
+
+        private static bool IdentityRefreshDue(Dictionary<string, object> state, object path, object playlistPosition)
+        {
+            if (String.IsNullOrWhiteSpace(Value(state, "title")) && path != null) return true;
+            if (!String.Equals(Value(state, "mpvPath"), Scalar(path), StringComparison.Ordinal)) return true;
+            if (!String.Equals(Value(state, "mpvPlaylistPosition"), Scalar(playlistPosition), StringComparison.Ordinal)) return true;
+            long lastSync;
+            if (!Int64.TryParse(Value(state, "identitySyncedUtcTicks", "0"), out lastSync)) return true;
+            return DateTime.UtcNow.Ticks - lastSync > TimeSpan.FromSeconds(10).Ticks;
+        }
+
+        private static MpvSnapshot SyncCurrentTrackFromNcmState(Dictionary<string, object> state)
+        {
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                MpvSnapshot before = ReadMpvSnapshot();
+                var result = RunNcm(new[] { "state" }, 8000) as Dictionary<string, object>;
+                MpvSnapshot after = ReadMpvSnapshot();
+                if (!SameMpvIdentity(before, after)) continue;
+
+                object rawPayload;
+                var payload = result != null && result.TryGetValue("payload", out rawPayload) ? rawPayload as Dictionary<string, object> : null;
+                object rawState;
+                var actual = payload != null && payload.TryGetValue("state", out rawState) ? rawState as Dictionary<string, object> : null;
+                if (actual == null) throw new UserError("官方播放器没有返回可识别的状态");
+
+                string title = after.Path == null ? "" : Value(actual, "title");
+                state["title"] = title;
+                state["meta"] = String.IsNullOrWhiteSpace(title) ? "" : "网易云音乐 · 官方播放状态";
+                foreach (string field in new[] { "currentIndex", "queueLength" })
+                {
+                    object value;
+                    if (actual.TryGetValue(field, out value) && value != null) state[field] = value;
+                }
+                object volume;
+                if (actual.TryGetValue("volume", out volume) && volume != null) state["volume"] = volume;
+                state["mpvPath"] = Scalar(after.Path);
+                state["mpvPlaylistPosition"] = Scalar(after.PlaylistPosition);
+                state["identitySyncedUtcTicks"] = DateTime.UtcNow.Ticks;
+                ApplyMpvPlaybackState(state, after);
+                return after;
+            }
+            throw new UserError("播放曲目正在切换，请稍后刷新");
         }
 
         private static bool TrySendMpv(object[] command)
@@ -826,17 +902,15 @@ namespace CloudMusicEdge
             if (!TrySendMpv(command)) throw new UserError("当前没有正在播放的内容");
         }
 
-        private static bool IsMpvReady()
-        {
-            return GetMpvProperty("pause") is bool;
-        }
-
         private static object ManagedStateResult(Dictionary<string, object> state, string message)
         {
             object rawQueue;
             var queue = state.TryGetValue("queue", out rawQueue) ? rawQueue as ICollection : null;
+            int queueLength;
+            if (!Int32.TryParse(Value(state, "queueLength", queue == null ? "0" : queue.Count.ToString(CultureInfo.InvariantCulture)), out queueLength))
+                queueLength = queue == null ? 0 : queue.Count;
             var view = Map("status", Value(state, "status", "stopped"), "currentIndex", Convert.ToInt32(Value(state, "currentIndex", "0")),
-                "queueLength", queue == null ? 0 : queue.Count, "volume", Convert.ToInt32(Value(state, "volume", "50")),
+                "queueLength", queueLength, "volume", Convert.ToInt32(Value(state, "volume", "50")),
                 "title", Value(state, "title"), "meta", Value(state, "meta"),
                 "position", state.ContainsKey("position") ? state["position"] : 0,
                 "duration", state.ContainsKey("duration") ? state["duration"] : 0);

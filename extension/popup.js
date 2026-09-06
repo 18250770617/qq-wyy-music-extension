@@ -37,7 +37,7 @@ function send(action, payload = {}) {
       if (!pending.has(id)) return;
       pending.delete(id);
       reject(new Error("操作超时，请重新检测连接"));
-    }, 35000);
+    }, action === "netease.playPlaylist" || action === "netease.play" ? 60000 : 35000);
   });
 }
 
@@ -109,6 +109,22 @@ function collectArrays(value, output = []) {
   return output;
 }
 
+function neteaseAvailability(item) {
+  if (item?.visible === false) return { availability: "blocked", playMode: null, reasonCode: "copyright", reasonText: "当前端无版权", canPlay: false };
+  if (item?.playFlag === true) return { availability: "playable", playMode: "full", reasonCode: "full", reasonText: "完整播放", canPlay: true };
+  if (item?.resConsumable === true && item?.userConsumable === true) return { availability: "trial", playMode: "full_trial", reasonCode: "full_trial", reasonText: "试听", canPlay: true };
+  if (item?.freeTrailFlag === true) return { availability: "trial", playMode: "segment_trial", reasonCode: "segment_trial", reasonText: "片段试听", canPlay: true };
+  if (Number(item?.songFee) === 1) return { availability: "blocked", playMode: null, reasonCode: "vip", reasonText: "需要音乐会员", canPlay: false };
+  if (Number(item?.songFee) === 4) return { availability: "blocked", playMode: null, reasonCode: "digital_album", reasonText: "需购买数字专辑", canPlay: false };
+  return { availability: "unknown", playMode: null, reasonCode: "permission", reasonText: "播放状态未知", canPlay: false };
+}
+
+function artistText(item) {
+  const artists = item.artists || item.fullArtists || [];
+  if (typeof artists === "string") return artists;
+  return Array.isArray(artists) ? artists.map((artist) => typeof artist === "string" ? artist : artist?.name).filter(Boolean).join(" / ") : "";
+}
+
 function normalizeNetease(data, type) {
   let payload = data.payload;
   if (!payload && data.stdout) {
@@ -119,17 +135,21 @@ function normalizeNetease(data, type) {
   return items.map((item) => {
     const encryptedId = item.encryptedId || item.encrypted_id || item.id || item.resourceId;
     const originalId = item.originalId || item.original_id || item.originId || item.rawId;
-    const artists = item.artists || item.fullArtists || [];
+    let access = type === "song" ? neteaseAvailability(item) : { availability: "playable", playMode: "full", reasonCode: "playlist", reasonText: "打开歌单", canPlay: true };
+    if (type === "song" && (!/^[a-f\d]{32}$/i.test(String(encryptedId || "")) || !/^\d{1,20}$/.test(String(originalId || "")))) {
+      access = { availability: "unknown", playMode: null, reasonCode: "identity", reasonText: "资源标识不完整", canPlay: false };
+    }
     return {
       provider: "netease",
       kind: type,
       title: item.name || item.songName || item.playlistName || item.title || "未命名",
-      meta: item.artistName || item.singerName || artists.map((artist) => artist?.name).filter(Boolean).join(" / ") || item.creatorName || item.description || "网易云音乐",
+      meta: item.artistName || item.singerName || artistText(item) || item.creatorName || item.description || "网易云音乐",
       encryptedId: typeof encryptedId === "string" ? encryptedId : "",
       originalId: String(originalId || ""),
-      visible: item.visible !== false && item.playFlag !== false && item.plLevel !== "none"
+      visible: access.canPlay,
+      ...access
     };
-  }).filter((item) => item.encryptedId);
+  }).filter((item) => type === "playlist" ? item.encryptedId : true);
 }
 
 function normalizeQQ(data, type) {
@@ -167,8 +187,9 @@ function renderResults(items, rawFallback) {
     button.className = "result";
     button.innerHTML = `<span class="result-index">${index + 1}</span><span class="grow"><span class="result-title"></span><span class="result-meta"></span></span>`;
     button.querySelector(".result-title").textContent = item.title;
-    button.querySelector(".result-meta").textContent = item.visible === false ? `${item.meta} · 暂不可播` : item.meta;
-    button.disabled = item.visible === false;
+    button.querySelector(".result-meta").textContent = item.kind === "song" && item.availability !== "playable" && item.reasonText ? `${item.meta} · ${item.reasonText}` : item.meta;
+    button.disabled = item.canPlay === false;
+    if (item.canPlay === false) button.title = item.reasonText || "当前不可播放";
     button.addEventListener("click", () => activateResult(item));
     root.appendChild(button);
   });
@@ -200,6 +221,7 @@ async function runSearch() {
 }
 
 async function activateResult(item) {
+  if (item.canPlay === false) return showNotice(item.reasonText || "当前歌曲不可播放", true);
   try {
     if (item.provider === "qq") {
       if (item.kind === "playlist") {
@@ -215,15 +237,17 @@ async function activateResult(item) {
     }
     if (item.kind === "playlist") {
       showNotice("正在打开歌单…");
-      await send("netease.playPlaylist", item);
-      $("track-title").textContent = item.title;
-      $("track-detail").textContent = `${item.meta} · 网易云歌单`;
+      const result = await send("netease.playPlaylist", item);
+      const actual = result.payload?.state || {};
+      $("track-title").textContent = actual.title || item.title;
+      $("track-detail").textContent = actual.meta || `${item.meta} · 网易云歌单`;
       showNotice("歌单已开始播放");
     } else {
-      await send("netease.play", item);
-      $("track-title").textContent = item.title;
-      $("track-detail").textContent = item.meta;
-      showNotice("已发送播放命令");
+      const result = await send("netease.play", item);
+      const actual = result.payload?.state || {};
+      $("track-title").textContent = actual.title || item.title;
+      $("track-detail").textContent = actual.meta || item.meta;
+      showNotice(result.payload?.message || "已发送播放命令");
     }
   } catch (error) {
     showNotice(error.message, true);
