@@ -19,7 +19,7 @@ namespace CloudMusicEdge
 {
     internal static class BridgeHost
     {
-        private const string Version = "0.6.1";
+        private const string Version = "0.6.2";
         private const string QqBaseUrl = "https://a.y.qq.com";
         private const string QqSkillVersion = "0.0.3";
         private static readonly JavaScriptSerializer Json = new JavaScriptSerializer { MaxJsonLength = 8 * 1024 * 1024 };

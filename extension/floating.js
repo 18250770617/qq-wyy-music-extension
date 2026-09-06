@@ -47,14 +47,14 @@
       .dock{pointer-events:none;position:absolute;top:1px;display:flex;gap:1px;padding:4px;border:1px solid #ffffff20;border-radius:17px;background:rgba(var(--panel-bottom),.94);box-shadow:0 15px 40px #0008;backdrop-filter:blur(24px);opacity:0;transform:scale(.9);transition:.18s ease}.right .dock{right:52px;transform-origin:right}.left .dock{left:52px;transform-origin:left}.open .dock{pointer-events:auto;opacity:1;transform:scale(1)}.icon{display:grid;place-items:center;width:34px;height:34px;padding:0;border-radius:11px;background:transparent;color:#cdd2db}.icon:hover{background:#ffffff10;color:#fff}.icon.toggle{background:#f7f8fa;color:#111319}.icon.panel-button{background:var(--accent);color:#111319}.play-glyph,.pause-glyph{display:grid}.playing .play-glyph,.paused .pause-glyph{display:none}
       .orb,.dock{z-index:7}.panel{pointer-events:auto;position:fixed;z-index:8;top:8px;left:8px;width:min(660px,calc(var(--viewport-width,100vw) - 16px));height:min(404px,calc(var(--viewport-height,100vh) - 16px));overflow:hidden;display:flex;flex-direction:column;border:1px solid #ffffff26;border-radius:24px;background:linear-gradient(155deg,rgba(var(--panel-top),var(--panel-opacity)),rgba(var(--panel-bottom),var(--panel-opacity)) 62%);color:#f7f8fa;box-shadow:0 28px 80px #000b;backdrop-filter:blur(30px) saturate(1.18);opacity:0;visibility:hidden;transform:translateY(7px) scale(.985);transition:opacity .18s ease,transform .18s ease,visibility .18s}.panel[data-placement="above"]{transform:translateY(-7px) scale(.985)}.panel.show{opacity:1;visibility:visible;transform:none}.panel-head{position:relative;display:flex;flex:0 0 50px;align-items:center;justify-content:space-between;padding:9px 13px 7px 17px;border-bottom:1px solid #ffffff0e}.brand{font-size:10px;font-weight:750;letter-spacing:.2em;color:#929aa8}.head-actions{display:flex;align-items:center;gap:5px}.provider{padding:7px 10px;border:1px solid #ffffff1d;border-radius:10px;background:#ffffff09}.provider:after{content:"";display:inline-block;width:6px;height:6px;margin-left:7px;border-radius:50%;background:var(--provider);box-shadow:0 0 8px var(--provider)}.head-icon{width:30px;height:30px;border-radius:9px;background:transparent;color:#89909c}.head-icon:hover{background:#ffffff0d;color:#fff}
       .panel-grid{display:grid;grid-template-columns:minmax(270px,.92fr) minmax(310px,1.08fr);flex:1;min-height:0}.player-column{display:flex;min-width:0;min-height:0;flex-direction:column;padding:10px 13px 11px;border-right:1px solid #ffffff10;overflow:auto;scrollbar-width:thin;scrollbar-color:#3c414c transparent}.visual-stage{position:relative;height:164px;flex:0 0 164px;overflow:hidden;border:1px solid #ffffff1c;border-radius:18px;background:radial-gradient(circle at 74% 20%,rgba(var(--visual-glow),.42),transparent 34%),radial-gradient(circle at 20% 75%,rgba(39,59,82,var(--panel-opacity)),transparent 42%),linear-gradient(145deg,rgba(39,41,49,var(--panel-opacity)),rgba(18,21,26,var(--panel-opacity)));box-shadow:inset 0 1px #ffffff14}.visual-stage:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 49.7%,#ffffff0b 50%,transparent 50.3%),linear-gradient(#ffffff05 1px,transparent 1px);background-size:100% 100%,100% 34px;opacity:.55}.visual-glow{position:absolute;inset:0;background:linear-gradient(110deg,transparent 20%,#ffffff0c 48%,transparent 72%);transform:translateX(-100%);animation:scan 5s linear infinite}.now{position:absolute;z-index:3;top:13px;left:14px;right:14px;display:flex;align-items:center;gap:10px}.disc{width:42px;height:42px;flex:0 0 auto;border:7px solid #171a20;border-radius:50%;background:repeating-radial-gradient(circle,#2d323d 0 2px,#171a20 3px 5px);box-shadow:0 8px 20px #0008;display:grid;place-items:center;animation:spin 8s linear infinite;animation-play-state:paused}.playing .disc{animation-play-state:running}.disc:after{content:"";width:11px;height:11px;border:4px solid #181a20;border-radius:50%;background:var(--accent)}.track{min-width:0;flex:1}.track-title{font-size:calc(16px * var(--font-scale));font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.track-meta{margin-top:3px;color:#b0b6c1;font-size:calc(11px * var(--font-scale));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.state-pill,.spectrum-pill{padding:4px 7px;border-radius:7px;background:#090b0fa6;color:#cbd0d8;font-size:9px;letter-spacing:.05em}.spectrum-pill{position:absolute;right:9px;bottom:6px;color:#828a97}
-      .visual-glow{animation-play-state:paused}.playing .visual-glow{animation-play-state:running}.waveform{position:absolute;z-index:2;left:12px;right:12px;top:74px;height:38px;display:flex;align-items:center;justify-content:space-between}.waveform:after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:#fff9}.waveform i{z-index:1;width:2px;height:var(--h);border-radius:3px;background:#fff;box-shadow:0 0 5px var(--accent);animation:wavePulse .8s ease-in-out calc(var(--i)*-.025s) infinite alternate;animation-play-state:paused}.playing .waveform i{animation-play-state:running}.bass-bars{position:absolute;z-index:2;left:10px;right:10px;bottom:0;height:55px;display:flex;align-items:end;gap:3px}.bass-bars i{flex:1;height:var(--h);min-height:7px;border:1px solid var(--accent);border-bottom:0;border-radius:3px 3px 0 0;background:#fff;box-shadow:0 0 8px var(--accent);animation:bassPulse .72s ease-in-out calc(var(--i)*-.055s) infinite alternate;animation-play-state:paused;transform-origin:bottom}.playing .bass-bars i{animation-play-state:running}.live-spectrum .waveform i,.live-spectrum .bass-bars i{animation:none;transition:height .09s linear,opacity .16s ease}.live-spectrum .spectrum-pill{color:var(--accent)}
+      .visual-glow{animation-play-state:paused}.playing .visual-glow{animation-play-state:running}.waveform{position:absolute;z-index:2;left:12px;right:12px;top:74px;height:38px;display:flex;align-items:center;justify-content:space-between}.waveform:after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:#fff9}.waveform i{z-index:1;width:2px;height:var(--h);border-radius:3px;background:#fff;box-shadow:0 0 5px var(--accent);animation:wavePulse .8s ease-in-out calc(var(--i)*-.025s) infinite alternate;animation-play-state:paused}.playing .waveform i{animation-play-state:running}.bass-bars{position:absolute;z-index:2;left:10px;right:10px;bottom:0;height:55px;display:flex;align-items:end;gap:3px}.bass-bars i{flex:1;height:var(--h);min-height:7px;border:1px solid var(--accent);border-bottom:0;border-radius:3px 3px 0 0;background:#fff;box-shadow:0 0 8px var(--accent);animation:bassPulse .72s ease-in-out calc(var(--i)*-.055s) infinite alternate;animation-play-state:paused;transform-origin:bottom}.playing .bass-bars i{animation-play-state:running}.live-spectrum .waveform i,.live-spectrum .bass-bars i{animation:none;transition:height .09s linear,opacity .16s ease}.live-spectrum .bass-bars i{min-height:0}.live-spectrum .spectrum-pill{color:var(--accent)}.paused .mini-wave i,.paused .waveform i{height:0!important;opacity:0!important}.paused .bass-bars i{height:0!important;min-height:0;opacity:0!important}
       .timeline{flex:0 0 auto;padding:10px 3px 3px}.range{appearance:none;width:100%;height:3px;border-radius:4px;background:linear-gradient(90deg,var(--accent) var(--seek),#5c626d var(--seek));cursor:pointer}.range::-webkit-slider-thumb{appearance:none;width:11px;height:11px;border:3px solid #fff;border-radius:50%;background:var(--accent);box-shadow:0 2px 9px #0008}.times{display:flex;justify-content:space-between;margin-top:4px;color:#757d8b;font-size:10px;font-variant-numeric:tabular-nums}.controls{display:flex;flex:0 0 auto;align-items:center;justify-content:center;gap:10px;padding:1px 3px 7px}.controls .icon{width:36px;height:36px}.controls .toggle{width:47px;height:47px;border-radius:15px}.volume{display:flex;flex:0 0 auto;align-items:center;gap:9px;padding:2px 3px 0;color:#858d9a}.volume svg{width:15px}.volume .range{min-width:0;flex:1;background:linear-gradient(90deg,var(--accent) var(--volume),#5c626d var(--volume))}.volume-label{width:24px;text-align:right;font-variant-numeric:tabular-nums}
-      .browser-column{display:flex;min-width:0;min-height:0;flex-direction:column;padding:11px 12px 12px}.mode-tabs,.subtabs{display:flex;align-items:center;gap:4px}.mode-tabs{flex:0 0 auto;margin-bottom:8px}.mode,.subtab{padding:7px 10px;border-radius:9px;background:transparent;color:#858d9a;font-weight:650}.mode.active,.subtab.active{background:#ffffff10;color:#fff}.mode svg{width:14px;height:14px;margin-right:5px;vertical-align:-3px}.browse-pane,.search-pane,.library-pane,.playlist-pane{display:flex;flex:1;min-height:0;flex-direction:column}.search-toolbar{display:flex;flex:0 0 auto;align-items:center;gap:6px}.search-toolbar .subtabs{flex:0 0 auto}.search-row{display:flex;min-width:0;flex:1;gap:6px}.search-row input{min-width:0;flex:1;border:1px solid #343945;border-radius:11px;background:#090b0fcc;color:#fff;padding:9px 10px;outline:0}.search-row input:focus{border-color:#6c7482}.search-button{padding:0 12px;border-radius:11px;background:var(--accent);color:#111319;font-weight:700}.pane-head{display:flex;flex:0 0 auto;align-items:center;justify-content:space-between}.refresh-library{width:29px;height:29px;border-radius:9px;background:#ffffff08;color:#9ba2ad}.message{flex:0 0 auto;min-height:25px;padding:7px 3px 4px;color:#8c94a1;font-size:11px}.results{flex:1;min-height:58px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#3c414c transparent}.item{display:flex;align-items:center;width:100%;gap:9px;padding:8px 7px;border-radius:11px;background:transparent;text-align:left}.item:hover{background:#ffffff0b}.index{display:grid;place-items:center;width:26px;height:26px;flex:0 0 auto;border-radius:8px;background:#ffffff09;color:#777f8c;font-size:9px}.grow{min-width:0;flex:1}.title,.meta{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.title{font-weight:650}.meta{margin-top:1px;color:#858d99;font-size:11px}.empty{padding:23px 8px;text-align:center;color:#747c89}.empty strong{display:block;color:#aeb4be;font-size:13px}.empty span{display:block;margin-top:4px;font-size:11px}.load-more{flex:0 0 auto;width:100%;margin-top:5px;padding:7px;border:1px solid #ffffff14;border-radius:9px;background:#ffffff08;color:#b8bec8;font-size:11px}.load-more:hover{background:#ffffff10;color:#fff}
+      .browser-column{display:flex;min-width:0;min-height:0;flex-direction:column;padding:11px 12px 12px}.mode-tabs,.subtabs{display:flex;align-items:center;gap:4px}.mode-tabs{flex:0 0 auto;margin-bottom:8px}.mode,.subtab{padding:7px 10px;border-radius:9px;background:transparent;color:#858d9a;font-weight:650}.mode.active,.subtab.active{background:#ffffff10;color:#fff}.mode svg{width:14px;height:14px;margin-right:5px;vertical-align:-3px}.browse-pane,.search-pane,.library-pane,.playlist-pane{display:flex;flex:1;min-height:0;flex-direction:column}.search-toolbar{display:flex;flex:0 0 auto;align-items:center;gap:6px}.search-toolbar .subtabs{flex:0 0 auto}.search-row{display:flex;min-width:0;flex:1;gap:6px}.search-row input{min-width:0;flex:1;border:1px solid #343945;border-radius:11px;background:#090b0fcc;color:#fff;padding:9px 10px;outline:0}.search-row input:focus{border-color:#6c7482}.search-button{padding:0 12px;border-radius:11px;background:var(--accent);color:#111319;font-weight:700}.pane-head{display:flex;flex:0 0 auto;align-items:center;justify-content:space-between}.refresh-library{width:29px;height:29px;border-radius:9px;background:#ffffff08;color:#9ba2ad}.message{flex:0 0 auto;min-height:25px;padding:7px 3px 4px;color:#8c94a1;font-size:11px}.results{flex:1;min-height:58px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#3c414c transparent}.item{display:flex;align-items:center;width:100%;gap:9px;padding:8px 7px;border-radius:11px;background:transparent;text-align:left}.item:hover{background:#ffffff0b}.index{display:grid;place-items:center;width:26px;height:26px;flex:0 0 auto;border-radius:8px;background:#ffffff09;color:#777f8c;font-size:9px}.grow{min-width:0;flex:1}.title,.meta{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.title{font-weight:650}.meta{margin-top:1px;color:#858d99;font-size:11px}.empty{padding:23px 8px;text-align:center;color:#747c89}.empty strong{display:block;color:#aeb4be;font-size:13px}.empty span{display:block;margin-top:4px;font-size:11px}
       .item.is-unavailable{background:linear-gradient(90deg,#ff59680d,transparent 78%);box-shadow:inset 2px 0 #ff788544}.item.is-unavailable:hover{background:linear-gradient(90deg,#ff596817,transparent 82%)}.item.is-unavailable .title{color:#c8ced8}.item.is-unavailable .meta{color:#747d8b}.item-status{display:inline-flex;flex:0 0 auto;align-items:center;gap:4px;padding:3px 6px;border:1px solid transparent;border-radius:999px;font-size:9px;font-weight:750;line-height:1;white-space:nowrap}.item-status svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2}.item-status.is-blocked{border-color:#ff66752e;background:#ff59681a;color:#ff9aa3}.item-status.is-unknown{border-color:#aab5c52b;background:#aab5c512;color:#adb5c4}.item-status.is-trial{border-color:#f3ca7530;background:#f3ca7515;color:#f3ca75}.item-status.is-arrow{padding:0;border:0;background:none;color:var(--accent);font-size:14px}.item.is-loading{pointer-events:none}.item.is-loading .item-status>*{display:none}.item.is-loading .item-status:after{content:"加载中"}
       .playlist-head{display:grid;grid-template-columns:31px minmax(0,1fr) auto;align-items:center;gap:7px;flex:0 0 auto;padding-bottom:5px}.playlist-back{width:31px;height:31px;padding:0;border-radius:9px;background:#ffffff09;color:#b9c0ca}.playlist-copy{min-width:0}.playlist-title,.playlist-meta{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.playlist-title{font-weight:720}.playlist-meta{margin-top:1px;color:#858d99;font-size:10px}.playlist-play-all{padding:7px 9px;border-radius:9px;background:var(--accent);color:#111319;font-size:11px;font-weight:750}
       .appearance-panel{position:absolute;z-index:12;top:47px;right:11px;width:270px;max-height:calc(100% - 58px);overflow:auto;padding:13px;border:1px solid #ffffff23;border-radius:16px;background:rgba(var(--panel-top),var(--panel-opacity));box-shadow:0 18px 50px #000b;backdrop-filter:blur(28px);scrollbar-width:thin;scrollbar-color:#3c414c transparent}.appearance-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-weight:720}.appearance-title small{color:#8e96a3;font-weight:500}.theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.theme-option{height:38px;border:1px solid #ffffff18;border-radius:10px;background:linear-gradient(140deg,var(--sample-a),var(--sample-b));color:#fff;font-size:10px}.theme-option.active{border-color:var(--accent);box-shadow:0 0 0 2px #ffffff12}.setting-row{display:grid;grid-template-columns:72px minmax(0,1fr) 38px;align-items:center;gap:8px;margin-top:11px;color:#b4bbc5;font-size:11px}.setting-row output{text-align:right;color:#8c94a1}.font-options{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:10px}.font-option{padding:6px 4px;border-radius:8px;background:#ffffff08;color:#929aa6;font-size:10px}.font-option.active{background:#ffffff16;color:#fff}
       .dock-setting{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding-top:10px;border-top:1px solid #ffffff12;color:#d1d5dc;font-size:11px}.dock-setting input{width:15px;height:15px;accent-color:var(--accent)}.dock-source{margin:7px 0 0;color:#7f8794;font-size:9px;line-height:1.45}.dock-height-row.is-disabled{opacity:.45}.dock-height-row input:disabled{cursor:not-allowed}
-      .spectrum-dock{pointer-events:none;position:fixed;z-index:4;left:50%;bottom:env(safe-area-inset-bottom,0px);width:clamp(520px,62vw,1080px);height:var(--spectrum-dock-height);min-height:72px;max-height:180px;display:grid;grid-template-columns:minmax(120px,.72fr) minmax(260px,2.6fr) auto;align-items:end;gap:14px;padding:0;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none;transform:translateX(-50%);overflow:visible;filter:drop-shadow(0 3px 5px #000b)}.spectrum-dock-copy{min-width:0;align-self:end;margin-bottom:3px;text-shadow:0 1px 2px #000,0 2px 8px #000}.spectrum-dock-kicker{display:block;margin-bottom:4px;color:var(--accent);font-size:8px;font-weight:800;letter-spacing:.14em}.spectrum-dock-title,.spectrum-dock-meta{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.spectrum-dock-title{font-size:calc(13px * var(--font-scale));font-weight:740}.spectrum-dock-meta{margin-top:3px;color:#d4d8df;font-size:calc(9px * var(--font-scale))}.spectrum-dock-spectrum{position:relative;align-self:stretch;min-width:0;display:flex;align-items:stretch;gap:2px;padding:0 0 2px;overflow:hidden}.spectrum-dock-spectrum:after{content:"";position:absolute;left:0;right:0;bottom:1px;height:1px;background:linear-gradient(90deg,transparent,#ffffff9b 12%,#ffffff9b 88%,transparent)}.spectrum-dock-bar{position:relative;flex:1;min-width:1px}.spectrum-dock-bar:before{content:"";position:absolute;left:0;bottom:2px;width:100%;height:var(--h);border-radius:3px 3px 0 0;background:linear-gradient(90deg,var(--accent),#fff);box-shadow:0 0 7px var(--accent),0 1px 3px #000;opacity:.9;transform-origin:bottom;animation:dockPulse .72s ease-in-out calc(var(--i)*-.031s) infinite alternate;animation-play-state:paused}.spectrum-dock-bar:after{display:none}.playing:not(.live-spectrum) .spectrum-dock-bar:before,.shell[data-provider="qq"] .spectrum-dock-bar:before{animation-play-state:running}.live-spectrum .spectrum-dock-bar:before{height:calc(100% - 2px);transform:scaleY(var(--level,.08));animation:none;transition:transform .075s linear,opacity .12s ease}.spectrum-dock-actions{pointer-events:auto;display:flex;align-self:end;align-items:center;gap:2px;margin-bottom:1px;padding:0;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none}.spectrum-dock-actions .icon,.spectrum-dock-actions .icon.toggle,.spectrum-dock-actions .icon:hover{width:30px;height:30px;border:0;border-radius:10px;background:transparent;color:#f7f8fa;box-shadow:none;filter:drop-shadow(0 1px 3px #000)}.spectrum-dock-actions .icon:hover{color:var(--accent);transform:translateY(-1px)}.spectrum-dock-actions .toggle{width:36px;height:36px}.spectrum-dock-actions .icon:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.spectrum-dock-mode{position:absolute;right:58px;bottom:0;color:#e1e4e9;font-size:8px;text-shadow:0 1px 3px #000,0 2px 8px #000}.live-spectrum .spectrum-dock-mode{color:var(--accent)}
+      .spectrum-dock{pointer-events:none;position:fixed;z-index:4;left:50%;bottom:env(safe-area-inset-bottom,0px);width:clamp(520px,62vw,1080px);height:var(--spectrum-dock-height);min-height:72px;max-height:180px;display:grid;grid-template-columns:minmax(120px,.72fr) minmax(260px,2.6fr) auto;align-items:end;gap:14px;padding:0;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none;transform:translateX(-50%);overflow:visible;filter:drop-shadow(0 3px 5px #000b)}.spectrum-dock-copy{min-width:0;align-self:end;margin-bottom:3px;text-shadow:0 1px 2px #000,0 2px 8px #000}.spectrum-dock-kicker{display:block;margin-bottom:4px;color:var(--accent);font-size:8px;font-weight:800;letter-spacing:.14em}.spectrum-dock-title,.spectrum-dock-meta{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.spectrum-dock-title{font-size:calc(13px * var(--font-scale));font-weight:740}.spectrum-dock-meta{margin-top:3px;color:#d4d8df;font-size:calc(9px * var(--font-scale))}.spectrum-dock-spectrum{position:relative;align-self:stretch;min-width:0;display:flex;align-items:stretch;gap:2px;padding:0 0 2px;overflow:hidden}.spectrum-dock-spectrum:after{content:"";position:absolute;left:0;right:0;bottom:1px;height:1px;background:linear-gradient(90deg,transparent,#ffffff9b 12%,#ffffff9b 88%,transparent)}.spectrum-dock-bar{position:relative;flex:1;min-width:1px}.spectrum-dock-bar:before{content:"";position:absolute;left:0;bottom:2px;width:100%;height:var(--h);border-radius:3px 3px 0 0;background:linear-gradient(90deg,var(--accent),#fff);box-shadow:0 0 7px var(--accent),0 1px 3px #000;opacity:.9;transform-origin:bottom;animation:dockPulse .72s ease-in-out calc(var(--i)*-.031s) infinite alternate;animation-play-state:paused}.spectrum-dock-bar:after{display:none}.playing:not(.live-spectrum) .spectrum-dock-bar:before,.shell[data-provider="qq"] .spectrum-dock-bar:before{animation-play-state:running}.live-spectrum .spectrum-dock-bar:before{height:calc(100% - 2px);transform:scaleY(var(--level,.08));animation:none;transition:transform .075s linear,opacity .12s ease}.paused .spectrum-dock-bar:before{transform:scaleY(0);opacity:0!important;animation:none}.spectrum-dock-actions{pointer-events:auto;display:flex;align-self:end;align-items:center;gap:2px;margin-bottom:1px;padding:0;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none}.spectrum-dock-actions .icon,.spectrum-dock-actions .icon.toggle,.spectrum-dock-actions .icon:hover{width:30px;height:30px;border:0;border-radius:10px;background:transparent;color:#f7f8fa;box-shadow:none;filter:drop-shadow(0 1px 3px #000)}.spectrum-dock-actions .icon:hover{color:var(--accent);transform:translateY(-1px)}.spectrum-dock-actions .toggle{width:36px;height:36px}.spectrum-dock-actions .icon:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.spectrum-dock-mode{position:absolute;right:58px;bottom:0;color:#e1e4e9;font-size:8px;text-shadow:0 1px 3px #000,0 2px 8px #000}.live-spectrum .spectrum-dock-mode{color:var(--accent)}
       @media(max-width:700px){.spectrum-dock{bottom:env(safe-area-inset-bottom,0px);width:calc(var(--viewport-width,100vw) - 20px);grid-template-columns:minmax(0,1fr) auto;gap:7px;padding:0}.spectrum-dock-copy,.spectrum-dock-meta,.spectrum-dock-mode{display:none}.spectrum-dock-spectrum{gap:1px}.spectrum-dock-actions .icon{width:27px;height:27px}.spectrum-dock-actions .toggle{width:32px;height:32px}}
       @keyframes spin{to{transform:rotate(360deg)}}@keyframes miniPulse{to{transform:scaleY(.35)}}@keyframes wavePulse{to{height:4px;opacity:.55}}@keyframes bassPulse{to{transform:scaleY(.35);opacity:.78}}@keyframes dockPulse{to{transform:scaleY(.28);opacity:.5}}@keyframes scan{to{transform:translateX(100%)}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}@media(max-width:640px){.panel{width:min(374px,calc(var(--viewport-width,100vw) - 16px));height:min(600px,calc(var(--viewport-height,100vh) - 16px))}.panel-grid{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(150px,284px) minmax(112px,1fr)}.player-column{min-height:0;border-right:0;border-bottom:1px solid #ffffff10;overflow:auto}.visual-stage{height:144px;flex-basis:144px}.browser-column{min-height:112px}.appearance-panel{width:min(270px,calc(100% - 22px))}}@media(max-width:640px) and (max-height:450px){.panel-head{flex-basis:42px}.panel-grid{grid-template-rows:minmax(132px,46%) minmax(112px,1fr)}.player-column{padding:7px 10px}.visual-stage{height:118px;flex-basis:118px}}@media(max-height:450px) and (min-width:641px){.panel{height:calc(var(--viewport-height,100vh) - 12px)}.panel-head{flex-basis:46px}.player-column{padding-top:8px}.visual-stage{height:146px;flex-basis:146px}.appearance-panel{top:42px}}
     </style>
@@ -73,8 +73,8 @@
           </section>
           <section class="browser-column">
             <nav class="mode-tabs"><button class="mode active" data-mode="search">${svg.search}搜索</button><button class="mode library-mode" data-mode="library">${svg.library}我的音乐</button></nav>
-            <div class="browse-pane"><section class="search-pane"><div class="search-toolbar"><div class="subtabs"><button class="subtab active" data-search-type="song">歌曲</button><button class="subtab" data-search-type="playlist">歌单</button></div><div class="search-row"><input maxlength="100" placeholder="搜索歌曲"><button class="search-button">搜索</button></div></div><div class="message search-message" aria-live="polite">搜索结果会按分类保留</div><div class="results search-results"></div></section><section class="library-pane hidden"><div class="pane-head"><div class="subtabs"><button class="subtab active" data-library-type="favorite">喜欢</button><button class="subtab" data-library-type="created">创建</button><button class="subtab" data-library-type="collected">收藏</button></div><button class="refresh-library" aria-label="刷新我的音乐">${svg.refresh}</button></div><div class="message library-message" aria-live="polite">从官方账号读取，不保存个人歌单数据</div><div class="results library-results"></div><button class="load-more library-load-more hidden">加载更多</button></section></div>
-            <section class="playlist-pane hidden"><header class="playlist-head"><button class="playlist-back" aria-label="返回列表">${svg.back}</button><span class="playlist-copy"><span class="playlist-title">歌单</span><span class="playlist-meta"></span></span><button class="playlist-play-all">播放全部</button></header><div class="message playlist-message" aria-live="polite">正在读取歌单…</div><div class="results playlist-results"></div><button class="load-more playlist-load-more hidden">加载更多</button></section>
+            <div class="browse-pane"><section class="search-pane"><div class="search-toolbar"><div class="subtabs"><button class="subtab active" data-search-type="song">歌曲</button><button class="subtab" data-search-type="playlist">歌单</button></div><div class="search-row"><input maxlength="100" placeholder="搜索歌曲"><button class="search-button">搜索</button></div></div><div class="message search-message" aria-live="polite">搜索结果会按分类保留</div><div class="results search-results"></div></section><section class="library-pane hidden"><div class="pane-head"><div class="subtabs"><button class="subtab active" data-library-type="favorite">喜欢</button><button class="subtab" data-library-type="created">创建</button><button class="subtab" data-library-type="collected">收藏</button></div><button class="refresh-library" aria-label="刷新我的音乐">${svg.refresh}</button></div><div class="message library-message" aria-live="polite">从官方账号读取，不保存个人歌单数据</div><div class="results library-results"></div></section></div>
+            <section class="playlist-pane hidden"><header class="playlist-head"><button class="playlist-back" aria-label="返回列表">${svg.back}</button><span class="playlist-copy"><span class="playlist-title">歌单</span><span class="playlist-meta"></span></span><button class="playlist-play-all">播放全部</button></header><div class="message playlist-message" aria-live="polite">正在读取歌单…</div><div class="results playlist-results"></div></section>
           </section>
         </div>
       </section>
@@ -98,11 +98,9 @@
   const searchResults = root.querySelector(".search-results");
   const libraryMessage = root.querySelector(".library-message");
   const libraryResults = root.querySelector(".library-results");
-  const libraryLoadMore = root.querySelector(".library-load-more");
   const playlistPane = root.querySelector(".playlist-pane");
   const playlistMessage = root.querySelector(".playlist-message");
   const playlistResults = root.querySelector(".playlist-results");
-  const playlistLoadMore = root.querySelector(".playlist-load-more");
   const appearancePanel = root.querySelector(".appearance-panel");
   const spectrumDock = root.querySelector(".spectrum-dock");
   const searchCache = new Map();
@@ -290,7 +288,7 @@
   function renderSpectrumMode() {
     const live = shell.classList.contains("live-spectrum");
     root.querySelector(".spectrum-dock-mode").textContent = live ? "当前音乐 · 10 频段实时" : provider === "qq" ? "QQ 音乐 · 状态动画" : state.status === "playing" ? "当前音乐 · 状态动画" : "当前音乐 · 等待播放";
-    root.querySelector(".spectrum-pill").textContent = live ? "10 频段实时" : "状态动画";
+    root.querySelector(".spectrum-pill").textContent = live ? "10 频段实时" : state.status === "playing" ? "状态动画" : "等待播放";
   }
   function renderState() {
     const playing = state.status === "playing";
@@ -366,9 +364,10 @@
       if (generation === visualizerGeneration) stopVisualizer();
     } finally { if (generation === visualizerGeneration) visualizerPending = false; }
   }
-  function squareSignedDifference(difference, scale = 1) {
+  function quarticSignedDifference(difference, scale = 1) {
     const normalized = difference / Math.max(.0001, scale);
-    return Math.sign(normalized) * normalized * normalized;
+    const magnitude = Math.min(1, Math.abs(normalized));
+    return Math.sign(normalized) * Math.pow(magnitude, 4);
   }
   function mapSpectrumTargets(rawBands, previousAbsolute) {
     const decibels = rawBands.map((raw) => {
@@ -387,12 +386,12 @@
       return value - (before + after) / 2;
     });
     const differenceScale = Math.max(.1, ...localDifference.map(Math.abs));
-    const spectralSquare = localDifference.map((difference) => squareSignedDifference(difference, differenceScale));
+    const spectralQuartic = localDifference.map((difference) => quarticSignedDifference(difference, differenceScale));
     const rises = absolute.map((value, index) => Math.max(0, value - Number(previousAbsolute?.[index] || 0)));
     const riseScale = Math.max(.06, ...rises);
-    const riseSquare = rises.map((difference) => Math.pow(difference / riseScale, 2));
+    const riseQuartic = rises.map((difference) => Math.pow(clamp(difference / riseScale, 0, 1), 4));
     const targets = absolute.map((value, index) => clamp(
-      .03 + .48 * value + .34 * Math.pow(relative[index], 1.4) + .14 * spectralSquare[index] + .14 * riseSquare[index],
+      .03 + .42 * value + .3 * Math.pow(relative[index], 1.55) + .26 * spectralQuartic[index] + .22 * riseQuartic[index],
       .03,
       1
     ));
@@ -417,29 +416,34 @@
       const progress = scaled - low;
       const difference = levels[high] - levels[low];
       const base = levels[low] + difference * progress;
-      const squaredDifference = squareSignedDifference(difference, differenceScale);
-      const bend = squaredDifference * .16 * Math.sin(Math.PI * progress);
-      return clamp(base + bend, .03, 1);
+      const quarticDifference = quarticSignedDifference(difference, differenceScale);
+      const bend = quarticDifference * .14 * Math.sin(Math.PI * progress);
+      return clamp(base + bend, Math.min(levels[low], levels[high]), Math.max(levels[low], levels[high]));
     });
+  }
+  function subtractSpectrumFloor(levels, restingLevel = .015) {
+    const clean = levels.map((value) => clamp(Number(value) || 0, 0, 1));
+    const minimum = clean.length ? Math.min(...clean) : 0;
+    return clean.map((value) => clamp(value - minimum + restingLevel, restingLevel, 1));
   }
   function renderVisualizerBands(rawBands) {
     if (!Array.isArray(rawBands) || rawBands.length !== 10) return;
     const mapped = mapSpectrumTargets(rawBands, visualizerPreviousAbsolute);
     mapped.absolute.forEach((value, index) => { visualizerPreviousAbsolute[index] = value; });
     smoothSpectrumLevels(visualizerLevels, mapped.targets).forEach((value, index) => { visualizerLevels[index] = value; });
-    const waveformLevels = expandSpectrumLevels(visualizerLevels, root.querySelectorAll(".waveform i").length);
+    const waveformLevels = subtractSpectrumFloor(expandSpectrumLevels(visualizerLevels, root.querySelectorAll(".waveform i").length));
     root.querySelectorAll(".waveform i").forEach((bar, index, bars) => {
       const level = waveformLevels[index];
-      bar.style.height = `${3 + level * 31}px`;
-      bar.style.opacity = String(.5 + level * .5);
+      bar.style.height = `${level * 36}px`;
+      bar.style.opacity = String(.28 + level * .72);
     });
-    const bassLevels = expandSpectrumLevels(visualizerLevels, root.querySelectorAll(".bass-bars i").length);
+    const bassLevels = subtractSpectrumFloor(expandSpectrumLevels(visualizerLevels, root.querySelectorAll(".bass-bars i").length));
     root.querySelectorAll(".bass-bars i").forEach((bar, index, bars) => {
       const level = bassLevels[index];
-      bar.style.height = `${7 + level * 43}px`;
-      bar.style.opacity = String(.62 + level * .38);
+      bar.style.height = `${level * 52}px`;
+      bar.style.opacity = String(.3 + level * .7);
     });
-    const dockLevels = expandSpectrumLevels(visualizerLevels, root.querySelectorAll(".spectrum-dock-bar").length);
+    const dockLevels = subtractSpectrumFloor(expandSpectrumLevels(visualizerLevels, root.querySelectorAll(".spectrum-dock-bar").length));
     root.querySelectorAll(".spectrum-dock-bar").forEach((bar, index, bars) => {
       const level = dockLevels[index];
       bar.style.setProperty("--level", String(level));
@@ -522,16 +526,19 @@
     if (item.availability === "trial") return { label: labels[item.reasonCode] || "试听", tone: "trial", icon: svg.play };
     return { label: labels[item.reasonCode] || "不可播放", tone: item.availability === "unknown" ? "unknown" : "blocked", icon: svg.lock };
   }
-  function renderItems(container, items, source) {
-    container.replaceChildren();
-    if (!items.length) return empty(container, "这里还是空的", source === "library" ? "登录账号还没有相关内容" : source === "playlist" ? "该歌单暂无歌曲" : "换个关键词试试");
+  function renderItems(container, items, source, options) {
+    options = options || {};
+    const append = options.append === true;
+    const startIndex = Math.max(0, Number(options.startIndex) || 0);
+    if (!append) container.replaceChildren();
+    if (!items.length) return append ? undefined : empty(container, "这里还是空的", source === "library" ? "登录账号还没有相关内容" : source === "playlist" ? "该歌单暂无歌曲" : "换个关键词试试");
     const fragment = document.createDocumentFragment();
     items.forEach((item, index) => {
       const button = document.createElement("button");
       button.className = `item${item.canPlay === false ? " is-unavailable" : item.availability === "trial" ? " is-trial" : ""}`;
       if (item.canPlay === false) button.setAttribute("aria-disabled", "true");
       button.innerHTML = `<span class="index"></span><span class="grow"><span class="title"></span><span class="meta"></span></span><span class="item-status"></span>`;
-      button.querySelector(".index").textContent = item.kind === "playlist" ? "歌单" : String(index + 1).padStart(2, "0");
+      button.querySelector(".index").textContent = item.kind === "playlist" ? "歌单" : String(startIndex + index + 1).padStart(2, "0");
       button.querySelector(".title").textContent = item.title;
       button.querySelector(".meta").textContent = item.meta;
       const badge = availabilityBadge(item);
@@ -549,6 +556,11 @@
       fragment.appendChild(button);
     });
     container.appendChild(fragment);
+  }
+  function renderItemsAtScroll(container, items, source, scrollTop) {
+    const preservedTop = Math.max(0, Number(scrollTop) || 0);
+    renderItems(container, items, source);
+    container.scrollTop = preservedTop;
   }
   function restoreSearch() {
     const cached = searchCache.get(cacheKey());
@@ -679,24 +691,26 @@
   }
   function renderLibraryEntry(type, entry) {
     libraryMessage.textContent = entry.message;
-    renderItems(libraryResults, entry.items, "library");
-    libraryResults.scrollTop = entry.scrollTop || 0;
-    libraryLoadMore.classList.toggle("hidden", !entry.hasMore);
-    libraryLoadMore.disabled = false;
-    libraryLoadMore.textContent = "加载更多";
+    renderItemsAtScroll(libraryResults, entry.items, "library", entry.scrollTop);
   }
   async function loadLibrary(force = false) {
     if (provider !== "netease") return;
     const requestedType = libraryType;
     if (!force && libraryCache.has(requestedType)) return renderLibraryEntry(requestedType, libraryCache.get(requestedType));
-    if (libraryInFlight.has(requestedType)) return libraryInFlight.get(requestedType);
+    const pending = libraryInFlight.get(requestedType);
+    if (pending) {
+      if (force && libraryCache.get(requestedType)?.loadingMore === pending) {
+        await pending;
+        return loadLibrary(true);
+      }
+      return pending;
+    }
     let finishLoading;
     const inFlight = new Promise((resolve) => { finishLoading = resolve; });
     libraryInFlight.set(requestedType, inFlight);
     const requestId = (latestLibraryRequest.get(requestedType) || 0) + 1;
     latestLibraryRequest.set(requestedType, requestId);
     libraryMessage.textContent = requestedType === "favorite" ? "正在读取喜欢的歌曲…" : "正在读取个人歌单…";
-    libraryLoadMore.classList.add("hidden");
     if (!libraryCache.has(requestedType)) libraryResults.replaceChildren();
     try {
       let items;
@@ -733,12 +747,15 @@
   async function loadMoreLibrary() {
     const requestedType = libraryType;
     const entry = libraryCache.get(requestedType);
-    if (!entry?.hasMore || provider !== "netease") return;
+    if (!entry?.hasMore || entry.loadingMore || libraryInFlight.has(requestedType) || provider !== "netease") return;
+    let finishLoading;
+    const inFlight = new Promise((resolve) => { finishLoading = resolve; });
+    entry.loadingMore = inFlight;
+    libraryInFlight.set(requestedType, inFlight);
     const requestId = (latestLibraryRequest.get(requestedType) || 0) + 1;
     latestLibraryRequest.set(requestedType, requestId);
     entry.scrollTop = libraryResults.scrollTop;
-    libraryLoadMore.disabled = true;
-    libraryLoadMore.textContent = "正在加载…";
+    libraryMessage.textContent = "正在自动加载更多…";
     try {
       const data = requestedType === "favorite"
         ? await native("netease.playlistTracks", { playlistId: entry.favoritePlaylist.encryptedId, limit: neteaseTrackPageSize, offset: entry.offset })
@@ -746,17 +763,23 @@
       if (latestLibraryRequest.get(requestedType) !== requestId) return;
       const batch = libraryBatch(data);
       const additions = requestedType === "favorite" ? normalize(data, "song", "netease") : normalizeLibrary(data, requestedType);
-      mergeUnique(entry.items, additions);
+      const startIndex = entry.items.length;
+      const appended = mergeUnique(entry.items, additions);
       entry.offset += batch.raw.length;
       entry.hasMore = batch.raw.length > 0 && entry.offset < entry.total;
       entry.message = libraryStatus(requestedType, entry.items, entry.total);
-      if (libraryType === requestedType && viewMode === "library" && !activePlaylistKey) renderLibraryEntry(requestedType, entry);
+      if (libraryType === requestedType && viewMode === "library" && !activePlaylistKey) {
+        libraryMessage.textContent = entry.message;
+        renderItems(libraryResults, appended, "library", { append: true, startIndex });
+      }
     } catch (error) {
       if (latestLibraryRequest.get(requestedType) === requestId && libraryType === requestedType && viewMode === "library" && !activePlaylistKey) {
-        libraryMessage.textContent = error.message;
-        libraryLoadMore.disabled = false;
-        libraryLoadMore.textContent = "重试加载更多";
+        libraryMessage.textContent = `自动加载失败：${error.message}；再次滚到底部可重试`;
       }
+    } finally {
+      if (entry.loadingMore === inFlight) entry.loadingMore = null;
+      if (libraryInFlight.get(requestedType) === inFlight) libraryInFlight.delete(requestedType);
+      finishLoading();
     }
   }
   function mergeUnique(target, additions) {
@@ -765,12 +788,14 @@
       return stable ? `${item.kind}:${stable}` : `${item.kind}:unidentified:${index}:${item.title}\u0000${item.meta}`;
     };
     const existing = new Set(target.map((item, index) => identity(item, index)));
-    target.push(...additions.filter((item, index) => {
+    const appended = additions.filter((item, index) => {
       const key = identity(item, target.length + index);
       if (existing.has(key)) return false;
       existing.add(key);
       return true;
-    }));
+    });
+    target.push(...appended);
+    return appended;
   }
   function findTotal(value) {
     if (!value || typeof value !== "object") return 0;
@@ -802,11 +827,7 @@
     playAll.textContent = entry.playlist.provider === "qq" ? "官方打开" : "播放全部";
     playAll.disabled = entry.playlist.provider === "netease" && !/^\d{1,20}$/.test(entry.playlist.originalId || "");
     playlistMessage.textContent = entry.message || "选择一首歌曲播放";
-    renderItems(playlistResults, entry.items, "playlist");
-    playlistResults.scrollTop = entry.scrollTop || 0;
-    playlistLoadMore.classList.toggle("hidden", !entry.hasMore);
-    playlistLoadMore.disabled = false;
-    playlistLoadMore.textContent = "加载更多";
+    renderItemsAtScroll(playlistResults, entry.items, "playlist", entry.scrollTop);
   }
   function closePlaylist() {
     if (!activePlaylistKey) return;
@@ -844,8 +865,8 @@
     latestPlaylistRequest.set(key, requestId);
     const requestedPage = force ? 0 : entry.page;
     const requestedOffset = force ? 0 : entry.offset;
+    if (!force) entry.scrollTop = playlistResults.scrollTop;
     playlistMessage.textContent = force ? "正在读取歌单…" : "正在加载更多歌曲…";
-    playlistLoadMore.disabled = true;
     try {
       const data = entry.playlist.provider === "qq"
         ? await native("qq.playlistDetail", { playlistId: entry.playlist.playlistId, page: requestedPage })
@@ -853,8 +874,9 @@
       if (latestPlaylistRequest.get(key) !== requestId) return;
       const additions = normalize(data, "song", entry.playlist.provider);
       const rawCount = rawTrackCount(data, entry.playlist.provider);
+      const startIndex = force ? 0 : entry.items.length;
+      const appended = force ? additions : mergeUnique(entry.items, additions);
       if (force) entry.items = additions;
-      else mergeUnique(entry.items, additions);
       entry.offset = requestedOffset + rawCount;
       entry.page = requestedPage + 1;
       entry.total = Math.max(entry.total, findTotal(data));
@@ -862,15 +884,33 @@
       entry.hasMore = rawCount > 0 && (entry.total > 0 ? entry.offset < entry.total : rawCount >= pageSize);
       entry.loaded = true;
       entry.message = `${availabilitySummary(entry.items)}${entry.total > entry.items.length ? ` / 共 ${entry.total}` : ""} · 点击可播歌曲`;
-      if (activePlaylistKey === key) showPlaylist(entry);
+      if (activePlaylistKey === key) {
+        if (force) showPlaylist(entry);
+        else {
+          playlistMessage.textContent = entry.message;
+          renderItems(playlistResults, appended, "playlist", { append: true, startIndex });
+        }
+      }
     } catch (error) {
       if (latestPlaylistRequest.get(key) !== requestId || activePlaylistKey !== key) return;
       entry.message = `读取失败：${error.message}`;
-      showPlaylist(entry);
+      if (force) showPlaylist(entry);
+      else playlistMessage.textContent = `${entry.message}；再次滚到底部可重试`;
     } finally {
       if (entry.loading === loading) entry.loading = null;
       finishLoading();
     }
+  }
+  function isNearListEnd(container) {
+    return container.scrollHeight - container.scrollTop - container.clientHeight <= 48;
+  }
+  function maybeAutoLoadLibrary() {
+    const entry = libraryCache.get(libraryType);
+    if (provider === "netease" && viewMode === "library" && !activePlaylistKey && entry?.hasMore && !entry.loadingMore && isNearListEnd(libraryResults)) loadMoreLibrary();
+  }
+  function maybeAutoLoadPlaylist() {
+    const entry = playlistCache.get(activePlaylistKey);
+    if (entry?.hasMore && !entry.loading && isNearListEnd(playlistResults)) loadPlaylist(false);
   }
   async function playWholePlaylist(entry, trigger) {
     if (playbackRequestPending) {
@@ -1021,8 +1061,8 @@
     loadLibrary();
   }));
   root.querySelector(".refresh-library").addEventListener("click", () => loadLibrary(true));
-  libraryLoadMore.addEventListener("click", loadMoreLibrary);
-  playlistLoadMore.addEventListener("click", () => loadPlaylist(false));
+  libraryResults.addEventListener("scroll", maybeAutoLoadLibrary, { passive: true });
+  playlistResults.addEventListener("scroll", maybeAutoLoadPlaylist, { passive: true });
   root.querySelector(".playlist-back").addEventListener("click", closePlaylist);
   root.querySelector(".playlist-play-all").addEventListener("click", (event) => {
     const entry = playlistCache.get(activePlaylistKey);

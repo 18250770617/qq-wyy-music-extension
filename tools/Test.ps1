@@ -28,6 +28,10 @@ if (Get-Command node -ErrorAction SilentlyContinue) {
     if ($LASTEXITCODE -ne 0) { throw '耗时数据请求与实时播放通道隔离检查失败。' }
     node (Join-Path $projectRoot 'tests\playlist-performance-contract.js')
     if ($LASTEXITCODE -ne 0) { throw '歌单加载性能保护检查失败。' }
+    node (Join-Path $projectRoot 'tests\load-more-scroll-contract.js')
+    if ($LASTEXITCODE -ne 0) { throw '加载更多滚动位置保护检查失败。' }
+    node (Join-Path $projectRoot 'tests\infinite-scroll-contract.js')
+    if ($LASTEXITCODE -ne 0) { throw '滚动到底自动加载检查失败。' }
     node (Join-Path $projectRoot 'tests\playback-click-guard.js')
     if ($LASTEXITCODE -ne 0) { throw '播放请求重复点击保护检查失败。' }
     node (Join-Path $projectRoot 'tests\unavailable-ui-contract.js')
@@ -43,7 +47,7 @@ if (Get-Command node -ErrorAction SilentlyContinue) {
     node (Join-Path $projectRoot 'tests\netease-visualizer-contract.js')
     if ($LASTEXITCODE -ne 0) { throw '网易云实时频段协议检查失败。' }
     node (Join-Path $projectRoot 'tests\spectrum-mapping-contract.js')
-    if ($LASTEXITCODE -ne 0) { throw '频谱平方差值映射检查失败。' }
+    if ($LASTEXITCODE -ne 0) { throw '频谱四次方差值映射检查失败。' }
     node (Join-Path $projectRoot 'tests\native-player-identity-contract.js')
     if ($LASTEXITCODE -ne 0) { throw '网易云实际曲目身份同步检查失败。' }
     node (Join-Path $projectRoot 'tests\floating-ui-contract.js')

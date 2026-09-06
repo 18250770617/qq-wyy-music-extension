@@ -10,7 +10,7 @@ if (!/const neteaseTrackPageSize = 40/.test(floating)) {
   throw new Error("网易云歌曲首批加载量应限制为 40，避免一次渲染和传输过重");
 }
 if (!/const libraryInFlight = new Map\(\)/.test(floating)
-    || !/if \(libraryInFlight\.has\(requestedType\)\) return libraryInFlight\.get\(requestedType\)/.test(floating)
+    || !/const pending = libraryInFlight\.get\(requestedType\)[\s\S]{0,260}if \(pending\)/.test(floating)
     || !/if \(entry\.loading\) return entry\.loading/.test(floating)) {
   throw new Error("个人库或歌单缺少同键请求合并保护");
 }

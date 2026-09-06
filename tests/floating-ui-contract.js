@@ -9,9 +9,9 @@ for (const marker of [
   "mini-wave", "data-open-panel", "class=\"waveform\"", "class=\"bass-bars\"", "class=\"range progress\"",
   "volume-range", "data-search-type=\"playlist\"", "data-mode=\"library\"", "data-library-type=\"favorite\"",
   "searchCache", "libraryCache", "latestSearchRequest", "latestLibraryRequest", "pointercancel",
-  "loadMoreLibrary", "library-load-more hidden", "netease.library", 'control("seek"', "schedulePoll", "host.isConnected", "placePanel",
+  "loadMoreLibrary", "maybeAutoLoadLibrary", "isNearListEnd", "netease.library", 'control("seek"', "schedulePoll", "host.isConnected", "placePanel",
   "grid-template-columns", "player-column", "browser-column", "playlist-pane hidden", "playlistCache", "latestPlaylistRequest",
-  "openPlaylist", "loadPlaylist", "playlist-back", "playlist-load-more", "qq.playlistDetail", "netease.playlistTracks",
+  "openPlaylist", "loadPlaylist", "playlist-back", "maybeAutoLoadPlaylist", "qq.playlistDetail", "netease.playlistTracks",
   "floatingAppearance", "applyAppearance", "appearance-opacity", "appearance-size", "data-theme-option", "data-font",
   "const above =", "else if (below", 'panel.dataset.placement = placement', "setPanelOpen(false)",
   "netease.visualizer", "live-spectrum", "renderVisualizerBands", 'mode: "stop"', "10 频段实时",
@@ -44,8 +44,13 @@ if (!/appearance-opacity[^>]*min="32"/.test(floating)) throw new Error("背景�
 if (!/dockHeight:\s*clamp\(Number\(next\.dockHeight\) \|\| 112, 72, 180\)/.test(floating)) throw new Error("底部频谱高度持久化值缺少范围校验");
 if (!/panel\.classList\.contains\("show"\) \|\| appearance\.dockEnabled/.test(floating)) throw new Error("面板关闭后底部频谱无法继续使用实时频段");
 if (!/querySelectorAll\("\.spectrum-dock-bar"\)[\s\S]{0,300}style\.setProperty\("--level"/.test(floating)) throw new Error("真实频段数据没有驱动底部单侧频谱");
-if (!/squareSignedDifference[\s\S]{0,1600}spectralSquare[\s\S]{0,500}riseSquare/.test(floating) || !/expandSpectrumLevels[\s\S]{0,900}squaredDifference/.test(floating)) {
-  throw new Error("实时频谱没有采用频段差值与瞬态差值的平方增强");
+if (!/quarticSignedDifference[\s\S]{0,1600}spectralQuartic[\s\S]{0,500}riseQuartic/.test(floating) || !/expandSpectrumLevels[\s\S]{0,900}quarticDifference/.test(floating)) {
+  throw new Error("实时频谱没有采用频段差值与瞬态差值的四次方增强");
+}
+if (!/subtractSpectrumFloor/.test(floating) || !/\.paused \.waveform i\{[^}]*height:0!important[^}]*opacity:0!important/.test(floating)
+    || !/\.paused \.bass-bars i\{[^}]*height:0!important[^}]*min-height:0[^}]*opacity:0!important/.test(floating)
+    || !/\.paused \.spectrum-dock-bar:before\{[^}]*transform:scaleY\(0\)[^}]*opacity:0!important/.test(floating)) {
+  throw new Error("最低频谱柱或非播放状态没有正确归零");
 }
 if (!worker.includes("chrome.runtime.connectNative")) throw new Error("状态轮询必须复用 Native Messaging 长连接");
 if (worker.includes("floatingAllSites")) throw new Error("不得在未明确授权时启用全站注入");

@@ -18,15 +18,16 @@ function readFunction(name) {
 
 const api = Function(`
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-  ${readFunction("squareSignedDifference")}
+  ${readFunction("quarticSignedDifference")}
   ${readFunction("mapSpectrumTargets")}
   ${readFunction("smoothSpectrumLevels")}
   ${readFunction("expandSpectrumLevels")}
-  return { squareSignedDifference, mapSpectrumTargets, smoothSpectrumLevels, expandSpectrumLevels };
+  ${readFunction("subtractSpectrumFloor")}
+  return { quarticSignedDifference, mapSpectrumTargets, smoothSpectrumLevels, expandSpectrumLevels, subtractSpectrumFloor };
 `)();
 
-function assertLevels(values, label) {
-  if (!values.every((value) => Number.isFinite(value) && value >= .03 && value <= 1)) {
+function assertLevels(values, label, minimum = .03) {
+  if (!values.every((value) => Number.isFinite(value) && value >= minimum && value <= 1)) {
     throw new Error(`${label} produced an invalid level: ${JSON.stringify(values)}`);
   }
 }
@@ -34,11 +35,11 @@ function assertLevels(values, label) {
 const hostile = [-120, Infinity, NaN, -72, -40, -18, 20, -33, -91, -5];
 const hostileMapped = api.mapSpectrumTargets(hostile, Array(10).fill(0));
 assertLevels(hostileMapped.targets, "hostile input");
-assertLevels(api.expandSpectrumLevels(hostileMapped.targets, 42), "hostile expansion");
+assertLevels(api.subtractSpectrumFloor(api.expandSpectrumLevels(hostileMapped.targets, 42)), "hostile expansion", .015);
 
-const half = Math.abs(api.squareSignedDifference(.5, 1));
-const full = Math.abs(api.squareSignedDifference(1, 1));
-if (Math.abs(full / half - 4) > .001) throw new Error("squared differences no longer have a 1:4 response");
+const half = Math.abs(api.quarticSignedDifference(.5, 1));
+const full = Math.abs(api.quarticSignedDifference(1, 1));
+if (Math.abs(full / half - 16) > .001) throw new Error("quartic differences no longer have a 1:16 response");
 
 const frame = [-66, -58, -46, -22, -14, -25, -43, -52, -61, -68];
 let previousAbsolute = Array(10).fill(0);
@@ -48,8 +49,8 @@ for (let frameIndex = 0; frameIndex < 8; frameIndex += 1) {
   previousAbsolute = mapped.absolute;
   levels = api.smoothSpectrumLevels(levels, mapped.targets);
 }
-const expanded = api.expandSpectrumLevels(levels, 42);
-assertLevels(expanded, "representative frame");
+const expanded = api.subtractSpectrumFloor(api.expandSpectrumLevels(levels, 42));
+assertLevels(expanded, "representative frame", .015);
 const spread = Math.max(...expanded) - Math.min(...expanded);
 const distinct = new Set(expanded.map((value) => value.toFixed(2))).size;
 let longestNearEqualRun = 1;
@@ -62,6 +63,19 @@ for (let index = 1; index < expanded.length; index += 1) {
 if (spread < .45) throw new Error(`spectrum contrast is still too small: ${spread.toFixed(3)}`);
 if (distinct < 18) throw new Error(`too many bars still share a height: only ${distinct} distinct levels`);
 if (longestNearEqualRun > 4) throw new Error(`near-equal bar run is too long: ${longestNearEqualRun}`);
+if (Math.abs(Math.min(...expanded) - .015) > .0001) throw new Error("minimum bar was not reduced to the resting hairline");
+
+const interpolationSource = [.1, .82, .24, .7];
+const interpolation = api.expandSpectrumLevels(interpolationSource, 31);
+interpolation.forEach((value, index) => {
+  const scaled = index / (interpolation.length - 1) * (interpolationSource.length - 1);
+  const low = Math.floor(scaled);
+  const high = Math.min(interpolationSource.length - 1, low + 1);
+  if (value < Math.min(interpolationSource[low], interpolationSource[high]) - .0001
+      || value > Math.max(interpolationSource[low], interpolationSource[high]) + .0001) {
+    throw new Error("quartic interpolation overshot its adjacent source bands");
+  }
+});
 
 previousAbsolute = Array(10).fill(0);
 levels = Array(10).fill(.03);
@@ -73,8 +87,8 @@ for (let frameIndex = 0; frameIndex < 40; frameIndex += 1) {
   lastChange = Math.max(...next.map((value, index) => Math.abs(value - levels[index])));
   levels = next;
 }
-const flatExpanded = api.expandSpectrumLevels(levels, 42);
+const flatExpanded = api.subtractSpectrumFloor(api.expandSpectrumLevels(levels, 42));
 if (lastChange >= .005) throw new Error(`stable input still jitters: ${lastChange.toFixed(4)}`);
 if (Math.max(...flatExpanded) - Math.min(...flatExpanded) >= .02) throw new Error("flat input creates a fake frequency pattern");
 
-console.log(`Squared spectrum mapping: OK (spread ${spread.toFixed(3)}, ${distinct} distinct heights)`);
+console.log(`Quartic spectrum mapping: OK (spread ${spread.toFixed(3)}, ${distinct} distinct heights)`);
