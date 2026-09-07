@@ -21,16 +21,18 @@ Edge popup / floating UI
 
 ## 消息契约
 
-请求统一为 `{ id, action, payload }`，响应统一为 `{ id, ok, data?, error? }`。动作分为 `system.*`、`settings.*`、`netease.*`、`qq.*`。未知动作直接拒绝。Popup 与 content script 都只向 Service Worker 发消息；Service Worker 按动作把请求送入三个懒连接通道：数据、播放控制和实时频段。每条通道独立维护端口、等待队列和断线清理，避免耗时歌单请求对 80ms 频段采样及播控形成队头阻塞；单曲/歌单启动还共用一个后台事务锁，防止两个界面并发启动不同曲目。
+请求统一为 `{ id, action, payload }`，响应统一为 `{ id, ok, data?, error? }`。动作分为 `system.*`、`settings.*`、`collection.*`、`netease.*`、`qq.*`。未知动作直接拒绝。Popup 与 content script 都只向 Service Worker 发消息；Service Worker 按动作把请求送入三个懒连接通道：数据、播放控制和实时频段。每条通道独立维护端口、等待队列和断线清理，避免耗时歌单请求对 80ms 频段采样及播控形成队头阻塞；单曲/歌单启动还共用一个后台事务锁，防止两个界面并发启动不同曲目。
 
 ## 数据与生命周期
 
 - 扩展本地存储：保存所选 Provider、授权站点和非敏感外观/位置偏好。
 - `%LOCALAPPDATA%\CloudMusicEdge\qq.key`：DPAPI 加密 QQ API Key。
 - `%LOCALAPPDATA%\CloudMusicEdge\netease-player.json`：只缓存官方播放器最近一次已核对的非敏感曲名、队列位置和播放状态；真实身份仍以 `ncm-cli state` 为准。
+- `%LOCALAPPDATA%\CloudMusicEdge\plugin-collection.json`：版本化的本地“插件特藏”。V2 同时保存最多 2000 个星标、100 个本地自建歌单及每单最多 500 首歌曲快照，只含白名单资源 ID 和展示字段；命名互斥锁协调多个 Host，并以同目录临时文件原子替换。V1 文件会在首次写入时无损升级。
 - 网易云配置与登录：ncm-cli 自有目录。
-- 搜索、个人音乐和歌单页缓存：仅保存在当前网页 content script 内存；首批歌曲限制为 40 首，同键加载合并，DOM 使用批量挂载。
-- 卸载脚本只移除注册表连接，不删除用户密钥；如需删除，用户可手动删除本地配置目录。
+- 搜索、个人音乐和歌单页缓存：仅保存在当前网页 content script 内存；插件特藏由 Host 分页读取。首批歌曲限制为 40 首，同键加载合并，DOM 使用批量挂载。
+- 单文件安装器安装到 `%LOCALAPPDATA%\Programs\CloudMusicEdge`，只注册 HKCU Native Messaging Host；扩展仍由用户在 Edge 中手动加载。
+- 卸载脚本只移除注册表连接，不删除用户密钥或插件特藏；如需删除，用户可手动删除本地配置目录。
 
 ## 依赖规则
 

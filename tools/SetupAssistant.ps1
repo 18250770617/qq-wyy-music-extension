@@ -101,7 +101,7 @@ Add-Button '配置并登录网易云' 250 335 { Start-Helper 'Setup-NetEase.ps1'
 Add-Button '打开网易云终端播放器' 470 335 { Start-Helper 'Setup-NetEase.ps1' '-Mode Tui' }
 Add-Button '打开 QQ 官方 Key 页面' 30 400 { Start-Process 'https://y.qq.com/n/ryqq_v2/qqmusic_skills' }
 Add-Button '运行完整连接检测' 250 400 { Start-Helper 'Doctor.ps1' }
-Add-Button '重新生成便携压缩包' 470 400 { Start-Helper 'Package.ps1' }
+Add-Button '生成个人迁移安装包' 470 400 { Start-Helper 'Package.ps1' '-IncludeCollection' }
 Add-Button '刷新状态' 30 465 { Refresh-Status } $true
 Add-Button '打开项目文件夹' 250 465 { Start-Process explorer.exe $projectRoot }
 Add-Button '查看中文说明' 470 465 { Start-Process (Join-Path $projectRoot 'README.md') }

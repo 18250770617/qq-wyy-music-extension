@@ -18,4 +18,4 @@ obj/
 
 # Generated release archives
 dist/*.zip
-
+artifacts/

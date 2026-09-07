@@ -38,7 +38,7 @@ const loadMoreLibraryFunction = readFunction("loadMoreLibrary");
 const loadPlaylistFunction = readFunction("loadPlaylist");
 
 if (!/renderItemsAtScroll\(libraryResults, entry\.items, "library", entry\.scrollTop\)/.test(libraryFunction)
-    || !/renderItemsAtScroll\(playlistResults, entry\.items, "playlist", entry\.scrollTop\)/.test(playlistFunction)) {
+    || !/renderItemsAtScroll\(playlistResults, entry\.items, entry\.local \? "localPlaylist" : "playlist", entry\.scrollTop\)/.test(playlistFunction)) {
   throw new Error("library and playlist rerenders do not share scroll-preserving rendering");
 }
 if (!/entry\.scrollTop = libraryResults\.scrollTop/.test(loadMoreLibraryFunction)

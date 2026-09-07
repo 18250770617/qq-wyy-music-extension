@@ -20,10 +20,15 @@ $assistantSmoke = & powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File
 if (-not $assistantSmoke.ready -or -not $assistantSmoke.extensionPathExists -or $assistantSmoke.controls -lt 10) { throw '图形设置助手运行时冒烟测试失败。' }
 
 & (Join-Path $PSScriptRoot 'Build.ps1') -Force
+$setupArtifact = Join-Path $projectRoot 'artifacts\CloudMusicEdge-Setup-v0.8.0.exe'
+& (Join-Path $PSScriptRoot 'Build-PortableSetup.ps1') -OutputPath $setupArtifact
+& (Join-Path $PSScriptRoot 'Test-PortableSetup.ps1') -InstallerPath $setupArtifact
 if (Get-Command node -ErrorAction SilentlyContinue) {
     Get-ChildItem -LiteralPath (Join-Path $projectRoot 'extension') -Filter '*.js' | ForEach-Object { node --check $_.FullName; if ($LASTEXITCODE -ne 0) { throw "JavaScript 语法错误：$($_.Name)" } }
     node (Join-Path $projectRoot 'tests\native-smoke.js')
     if ($LASTEXITCODE -ne 0) { throw 'Native Messaging 冒烟测试失败。' }
+    node (Join-Path $projectRoot 'tests\native-collection.js')
+    if ($LASTEXITCODE -ne 0) { throw '插件特藏数据层检查失败。' }
     node (Join-Path $projectRoot 'tests\native-channel-isolation.js')
     if ($LASTEXITCODE -ne 0) { throw '耗时数据请求与实时播放通道隔离检查失败。' }
     node (Join-Path $projectRoot 'tests\playlist-performance-contract.js')
@@ -52,6 +57,8 @@ if (Get-Command node -ErrorAction SilentlyContinue) {
     if ($LASTEXITCODE -ne 0) { throw '网易云实际曲目身份同步检查失败。' }
     node (Join-Path $projectRoot 'tests\floating-ui-contract.js')
     if ($LASTEXITCODE -ne 0) { throw '悬浮播放器交互契约检查失败。' }
+    node (Join-Path $projectRoot 'tests\collection-ui-contract.js')
+    if ($LASTEXITCODE -ne 0) { throw '插件特藏悬浮界面检查失败。' }
 } else { Write-Host '未找到 Node.js，跳过 JavaScript 语法和协议冒烟测试。' -ForegroundColor Yellow }
 
 $forbidden = Select-String -Path (Join-Path $projectRoot 'extension\*') -Pattern 'weapi|eapi|document\.cookie|webRequest' -ErrorAction SilentlyContinue

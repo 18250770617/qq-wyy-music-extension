@@ -19,14 +19,19 @@ namespace CloudMusicEdge
 {
     internal static class BridgeHost
     {
-        private const string Version = "0.6.2";
+        private const string Version = "0.8.0";
         private const string QqBaseUrl = "https://a.y.qq.com";
         private const string QqSkillVersion = "0.0.3";
         private static readonly JavaScriptSerializer Json = new JavaScriptSerializer { MaxJsonLength = 8 * 1024 * 1024 };
-        private static readonly string AppData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CloudMusicEdge");
+        private static readonly string AppData = ResolveAppData();
         private static readonly string QqKeyFile = Path.Combine(AppData, "qq.key");
         private static readonly string PlayerStateFile = Path.Combine(AppData, "netease-player.json");
+        private static readonly string CollectionFile = Path.Combine(AppData, "plugin-collection.json");
         private static readonly Mutex PlayerStateLock = new Mutex(false, "Local\\CloudMusicEdge.PlayerState");
+        private static readonly Mutex CollectionLock = new Mutex(false, "Local\\CloudMusicEdge.PluginCollection");
+        private const int CollectionLimit = 2000;
+        private const int LocalPlaylistLimit = 100;
+        private const int LocalPlaylistTrackLimit = 500;
         private static readonly object VisualizerSync = new object();
         private static readonly Dictionary<string, DateTime> VisualizerClients = new Dictionary<string, DateTime>(StringComparer.Ordinal);
         private static readonly Timer VisualizerWatchdog = new Timer(ReapVisualizerClients, null, 2000, 2000);
@@ -59,6 +64,16 @@ namespace CloudMusicEdge
         private const int StdInputHandle = -10;
         private const int StdOutputHandle = -11;
         private const int StdErrorHandle = -12;
+
+        private static string ResolveAppData()
+        {
+            if (Environment.GetEnvironmentVariable("CLOUDMUSIC_EDGE_TEST_MODE") == "1")
+            {
+                string isolated = Environment.GetEnvironmentVariable("CLOUDMUSIC_EDGE_TEST_DATA_DIR");
+                if (!String.IsNullOrWhiteSpace(isolated)) return Path.GetFullPath(isolated);
+            }
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CloudMusicEdge");
+        }
 
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern IntPtr GetStdHandle(int handle);
@@ -138,6 +153,17 @@ namespace CloudMusicEdge
                 case "settings.get": return Map("qqKeyConfigured", File.Exists(QqKeyFile));
                 case "settings.setQqKey": return SaveQqKey(payload);
                 case "settings.clearQqKey": return ClearQqKey();
+                case "collection.list": return CollectionList(payload);
+                case "collection.keys": return CollectionKeys();
+                case "collection.toggle": return CollectionToggle(payload);
+                case "collection.import": return CollectionImport(payload);
+                case "collection.playlists": return CollectionPlaylists();
+                case "collection.createPlaylist": return CollectionCreatePlaylist(payload);
+                case "collection.renamePlaylist": return CollectionRenamePlaylist(payload);
+                case "collection.deletePlaylist": return CollectionDeletePlaylist(payload);
+                case "collection.addToPlaylist": return CollectionAddToPlaylist(payload);
+                case "collection.removeFromPlaylist": return CollectionRemoveFromPlaylist(payload);
+                case "collection.playlistTracks": return CollectionPlaylistTracks(payload);
                 case "netease.search": return NeteaseSearch(payload);
                 case "netease.play": return NeteasePlay(payload);
                 case "netease.playPlaylist": return NeteasePlayPlaylist(payload);
@@ -226,6 +252,444 @@ namespace CloudMusicEdge
             {
                 throw new UserError("QQ API Key 无法由当前 Windows 用户解密，请重新保存");
             }
+        }
+
+        private static object CollectionList(Dictionary<string, object> payload)
+        {
+            string kind = GetString(payload, "kind", 20, false);
+            string provider = GetString(payload, "provider", 20, false);
+            if (kind != "" && kind != "song" && kind != "playlist") throw new UserError("特藏类型无效");
+            if (provider != "" && provider != "netease" && provider != "qq") throw new UserError("特藏平台无效");
+            int limit = GetOptionalInt(payload, "limit", 60, 1, 100);
+            int offset = GetOptionalInt(payload, "offset", 0, 0, CollectionLimit);
+            return WithCollectionLock(delegate
+            {
+                CollectionState state = LoadCollectionUnlocked();
+                var filtered = new List<Dictionary<string, object>>();
+                foreach (Dictionary<string, object> item in state.Items)
+                {
+                    if (kind != "" && Value(item, "kind") != kind) continue;
+                    if (provider != "" && Value(item, "provider") != provider) continue;
+                    filtered.Add(item);
+                }
+                var page = new List<Dictionary<string, object>>();
+                for (int i = offset; i < filtered.Count && page.Count < limit; i++) page.Add(filtered[i]);
+                return Map("version", 2, "items", page, "recordCount", filtered.Count, "offset", offset, "hasMore", offset + page.Count < filtered.Count);
+            });
+        }
+
+        private static object CollectionKeys()
+        {
+            return WithCollectionLock(delegate
+            {
+                CollectionState state = LoadCollectionUnlocked();
+                var keys = new List<string>();
+                foreach (Dictionary<string, object> item in state.Items) keys.Add(Value(item, "key"));
+                return Map("version", 2, "keys", keys, "recordCount", keys.Count);
+            });
+        }
+
+        private static object CollectionToggle(Dictionary<string, object> payload)
+        {
+            Dictionary<string, object> raw = payload.ContainsKey("item") ? payload["item"] as Dictionary<string, object> : null;
+            if (raw == null) throw new UserError("缺少参数：item");
+            Dictionary<string, object> normalized = NormalizeCollectionItem(raw, false);
+            return WithCollectionLock(delegate
+            {
+                CollectionState state = LoadCollectionUnlocked();
+                string key = Value(normalized, "key");
+                int existing = state.Items.FindIndex(delegate(Dictionary<string, object> candidate) { return Value(candidate, "key") == key; });
+                bool added = existing < 0;
+                if (added)
+                {
+                    if (state.Items.Count >= CollectionLimit) throw new UserError("插件特藏已达到 2000 项上限");
+                    state.Items.Insert(0, normalized);
+                }
+                else state.Items.RemoveAt(existing);
+                SaveCollectionUnlocked(state);
+                return Map("added", added, "key", key, "recordCount", state.Items.Count, "item", normalized);
+            });
+        }
+
+        private static object CollectionImport(Dictionary<string, object> payload)
+        {
+            object rawItems;
+            IEnumerable enumerable = payload.TryGetValue("items", out rawItems) ? rawItems as IEnumerable : null;
+            if (enumerable == null || rawItems is string) throw new UserError("缺少参数：items");
+            var incoming = new List<Dictionary<string, object>>();
+            foreach (object value in enumerable)
+            {
+                if (incoming.Count >= 100) throw new UserError("单次最多导入 100 项");
+                Dictionary<string, object> raw = value as Dictionary<string, object>;
+                if (raw == null) throw new UserError("特藏项目格式无效");
+                incoming.Add(NormalizeCollectionItem(raw, false));
+            }
+            if (incoming.Count == 0) throw new UserError("没有可导入的项目");
+            return WithCollectionLock(delegate
+            {
+                CollectionState state = LoadCollectionUnlocked();
+                var known = new HashSet<string>(StringComparer.Ordinal);
+                foreach (Dictionary<string, object> item in state.Items) known.Add(Value(item, "key"));
+                int added = 0;
+                for (int i = incoming.Count - 1; i >= 0; i--)
+                {
+                    Dictionary<string, object> item = incoming[i];
+                    if (!known.Add(Value(item, "key"))) continue;
+                    if (state.Items.Count >= CollectionLimit) break;
+                    state.Items.Insert(0, item);
+                    added++;
+                }
+                if (added > 0) SaveCollectionUnlocked(state);
+                return Map("addedCount", added, "recordCount", state.Items.Count);
+            });
+        }
+
+        private static object CollectionPlaylists()
+        {
+            return WithCollectionLock(delegate
+            {
+                CollectionState state = LoadCollectionUnlocked();
+                var playlists = new List<Dictionary<string, object>>();
+                foreach (Dictionary<string, object> playlist in state.Playlists) playlists.Add(LocalPlaylistSummary(playlist));
+                return Map("version", 2, "playlists", playlists, "recordCount", playlists.Count);
+            });
+        }
+
+        private static object CollectionCreatePlaylist(Dictionary<string, object> payload)
+        {
+            string name = ValidateLocalPlaylistName(GetString(payload, "name", 40, true));
+            return WithCollectionLock(delegate
+            {
+                CollectionState state = LoadCollectionUnlocked();
+                if (state.Playlists.Count >= LocalPlaylistLimit) throw new UserError("插件歌单已达到 100 个上限");
+                EnsureUniquePlaylistName(state, name, "");
+                string now = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
+                var playlist = Map("id", Guid.NewGuid().ToString("N"), "name", name, "createdAt", now, "updatedAt", now,
+                    "tracks", new List<Dictionary<string, object>>());
+                state.Playlists.Insert(0, playlist);
+                SaveCollectionUnlocked(state);
+                return Map("playlist", LocalPlaylistSummary(playlist), "recordCount", state.Playlists.Count);
+            });
+        }
+
+        private static object CollectionRenamePlaylist(Dictionary<string, object> payload)
+        {
+            string id = RequireLocalPlaylistId(payload);
+            string name = ValidateLocalPlaylistName(GetString(payload, "name", 40, true));
+            return WithCollectionLock(delegate
+            {
+                CollectionState state = LoadCollectionUnlocked();
+                int index = FindLocalPlaylistIndex(state, id);
+                EnsureUniquePlaylistName(state, name, id);
+                Dictionary<string, object> playlist = state.Playlists[index];
+                playlist["name"] = name;
+                playlist["updatedAt"] = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
+                MovePlaylistToFront(state, index);
+                SaveCollectionUnlocked(state);
+                return Map("playlist", LocalPlaylistSummary(playlist));
+            });
+        }
+
+        private static object CollectionDeletePlaylist(Dictionary<string, object> payload)
+        {
+            string id = RequireLocalPlaylistId(payload);
+            return WithCollectionLock(delegate
+            {
+                CollectionState state = LoadCollectionUnlocked();
+                int index = FindLocalPlaylistIndex(state, id);
+                string name = Value(state.Playlists[index], "name");
+                state.Playlists.RemoveAt(index);
+                SaveCollectionUnlocked(state);
+                return Map("deleted", true, "id", id, "name", name, "recordCount", state.Playlists.Count);
+            });
+        }
+
+        private static object CollectionAddToPlaylist(Dictionary<string, object> payload)
+        {
+            string id = RequireLocalPlaylistId(payload);
+            Dictionary<string, object> raw = payload.ContainsKey("item") ? payload["item"] as Dictionary<string, object> : null;
+            if (raw == null) throw new UserError("缺少参数：item");
+            Dictionary<string, object> item = NormalizeCollectionItem(raw, false);
+            if (Value(item, "kind") != "song") throw new UserError("插件歌单只能添加歌曲");
+            return WithCollectionLock(delegate
+            {
+                CollectionState state = LoadCollectionUnlocked();
+                int index = FindLocalPlaylistIndex(state, id);
+                Dictionary<string, object> playlist = state.Playlists[index];
+                List<Dictionary<string, object>> tracks = LocalPlaylistTracks(playlist);
+                string key = Value(item, "key");
+                bool added = tracks.FindIndex(delegate(Dictionary<string, object> candidate) { return Value(candidate, "key") == key; }) < 0;
+                if (added)
+                {
+                    if (tracks.Count >= LocalPlaylistTrackLimit) throw new UserError("该插件歌单已达到 500 首上限");
+                    tracks.Add(item);
+                    playlist["updatedAt"] = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
+                    MovePlaylistToFront(state, index);
+                    SaveCollectionUnlocked(state);
+                }
+                return Map("added", added, "playlist", LocalPlaylistSummary(playlist), "trackKey", key);
+            });
+        }
+
+        private static object CollectionRemoveFromPlaylist(Dictionary<string, object> payload)
+        {
+            string id = RequireLocalPlaylistId(payload);
+            string trackKey = GetString(payload, "trackKey", 700, true);
+            return WithCollectionLock(delegate
+            {
+                CollectionState state = LoadCollectionUnlocked();
+                int index = FindLocalPlaylistIndex(state, id);
+                Dictionary<string, object> playlist = state.Playlists[index];
+                List<Dictionary<string, object>> tracks = LocalPlaylistTracks(playlist);
+                int trackIndex = tracks.FindIndex(delegate(Dictionary<string, object> candidate) { return Value(candidate, "key") == trackKey; });
+                if (trackIndex < 0) throw new UserError("插件歌单中没有这首歌");
+                tracks.RemoveAt(trackIndex);
+                playlist["updatedAt"] = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
+                MovePlaylistToFront(state, index);
+                SaveCollectionUnlocked(state);
+                return Map("removed", true, "playlist", LocalPlaylistSummary(playlist), "trackKey", trackKey);
+            });
+        }
+
+        private static object CollectionPlaylistTracks(Dictionary<string, object> payload)
+        {
+            string id = RequireLocalPlaylistId(payload);
+            int limit = GetOptionalInt(payload, "limit", 60, 1, 100);
+            int offset = GetOptionalInt(payload, "offset", 0, 0, LocalPlaylistTrackLimit);
+            return WithCollectionLock(delegate
+            {
+                CollectionState state = LoadCollectionUnlocked();
+                Dictionary<string, object> playlist = state.Playlists[FindLocalPlaylistIndex(state, id)];
+                List<Dictionary<string, object>> tracks = LocalPlaylistTracks(playlist);
+                var page = new List<Dictionary<string, object>>();
+                for (int i = offset; i < tracks.Count && page.Count < limit; i++) page.Add(tracks[i]);
+                return Map("playlist", LocalPlaylistSummary(playlist), "items", page, "recordCount", tracks.Count,
+                    "offset", offset, "hasMore", offset + page.Count < tracks.Count);
+            });
+        }
+
+        private static string RequireLocalPlaylistId(Dictionary<string, object> payload)
+        {
+            string id = GetString(payload, "playlistId", 32, true);
+            if (!Regex.IsMatch(id, "^[a-fA-F0-9]{32}$")) throw new UserError("插件歌单 ID 格式无效");
+            return id.ToLowerInvariant();
+        }
+
+        private static string ValidateLocalPlaylistName(string raw)
+        {
+            string name = raw.Trim();
+            foreach (char c in name) if (Char.IsControl(c)) throw new UserError("歌单名称不能包含控制字符");
+            if (name.Length == 0 || name.Length > 40) throw new UserError("歌单名称应为 1–40 个字符");
+            return name;
+        }
+
+        private static void EnsureUniquePlaylistName(CollectionState state, string name, string exceptId)
+        {
+            foreach (Dictionary<string, object> playlist in state.Playlists)
+                if (Value(playlist, "id") != exceptId && String.Equals(Value(playlist, "name"), name, StringComparison.OrdinalIgnoreCase))
+                    throw new UserError("已经存在同名插件歌单");
+        }
+
+        private static int FindLocalPlaylistIndex(CollectionState state, string id)
+        {
+            int index = state.Playlists.FindIndex(delegate(Dictionary<string, object> playlist) { return Value(playlist, "id") == id; });
+            if (index < 0) throw new UserError("插件歌单不存在或已删除");
+            return index;
+        }
+
+        private static void MovePlaylistToFront(CollectionState state, int index)
+        {
+            if (index <= 0) return;
+            Dictionary<string, object> playlist = state.Playlists[index];
+            state.Playlists.RemoveAt(index);
+            state.Playlists.Insert(0, playlist);
+        }
+
+        private static Dictionary<string, object> LocalPlaylistSummary(Dictionary<string, object> playlist)
+        {
+            return Map("id", Value(playlist, "id"), "name", Value(playlist, "name"), "trackCount", LocalPlaylistTracks(playlist).Count,
+                "createdAt", Value(playlist, "createdAt"), "updatedAt", Value(playlist, "updatedAt"));
+        }
+
+        private static List<Dictionary<string, object>> LocalPlaylistTracks(Dictionary<string, object> playlist)
+        {
+            object raw;
+            var tracks = playlist.TryGetValue("tracks", out raw) ? raw as List<Dictionary<string, object>> : null;
+            if (tracks == null)
+            {
+                tracks = new List<Dictionary<string, object>>();
+                playlist["tracks"] = tracks;
+            }
+            return tracks;
+        }
+
+        private static Dictionary<string, object> NormalizeCollectionItem(Dictionary<string, object> raw, bool preserveAddedAt)
+        {
+            string provider = GetString(raw, "provider", 20, true);
+            string kind = GetString(raw, "kind", 20, true);
+            if (provider != "netease" && provider != "qq") throw new UserError("特藏平台无效");
+            if (kind != "song" && kind != "playlist") throw new UserError("特藏类型无效");
+            string title = GetString(raw, "title", 200, true);
+            string meta = GetString(raw, "meta", 300, false);
+            string availability = GetString(raw, "availability", 30, false);
+            if (availability == "") availability = kind == "playlist" ? "playable" : "unknown";
+            if (availability != "playable" && availability != "trial" && availability != "blocked" && availability != "unavailable" && availability != "unknown") throw new UserError("可播放状态无效");
+            string reasonCode = GetString(raw, "reasonCode", 40, false);
+            string reasonText = GetString(raw, "reasonText", 160, false);
+            bool canPlay = kind == "playlist" || availability == "playable" || availability == "trial";
+
+            var item = Map("provider", provider, "kind", kind, "title", title, "meta", meta, "availability", availability,
+                "reasonCode", reasonCode, "reasonText", reasonText, "canPlay", canPlay);
+            string key;
+            if (provider == "netease")
+            {
+                string encryptedId = RequireEncryptedId(raw, "encryptedId");
+                string originalId = RequireNumericId(raw, "originalId");
+                item["encryptedId"] = encryptedId;
+                item["originalId"] = originalId;
+                key = provider + ":" + kind + ":" + originalId;
+            }
+            else if (kind == "playlist")
+            {
+                string playlistId = RequireNumericId(raw, "playlistId");
+                item["playlistId"] = playlistId;
+                key = provider + ":playlist:" + playlistId;
+            }
+            else
+            {
+                string mid = GetString(raw, "mid", 64, false);
+                if (mid != "" && !Regex.IsMatch(mid, "^[A-Za-z0-9_-]{4,64}$")) throw new UserError("QQ 歌曲 ID 格式无效");
+                string url = GetString(raw, "url", 300, false);
+                if (mid == "" && url == "") throw new UserError("QQ 歌曲缺少官方资源 ID");
+                if (url != "") url = ValidateQqOfficialUrl(url);
+                if (mid != "") item["mid"] = mid;
+                if (url != "") item["url"] = url;
+                key = provider + ":song:" + (mid != "" ? mid : url);
+            }
+            int trackCount = GetOptionalInt(raw, "trackCount", 0, 0, 1000000);
+            if (kind == "playlist") item["trackCount"] = trackCount;
+            item["key"] = key;
+            string addedAt = preserveAddedAt ? GetString(raw, "addedAt", 40, false) : "";
+            DateTime parsed;
+            item["addedAt"] = addedAt != "" && DateTime.TryParse(addedAt, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out parsed)
+                ? parsed.ToUniversalTime().ToString("o", CultureInfo.InvariantCulture)
+                : DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
+            return item;
+        }
+
+        private static string ValidateQqOfficialUrl(string raw)
+        {
+            Uri uri;
+            if (!Uri.TryCreate(raw, UriKind.Absolute, out uri) || uri.Scheme != Uri.UriSchemeHttps ||
+                (uri.Host != "y.qq.com" && uri.Host != "i2.y.qq.com")) throw new UserError("QQ 官方播放地址无效");
+            return uri.AbsoluteUri;
+        }
+
+        private static CollectionState LoadCollectionUnlocked()
+        {
+            var state = new CollectionState();
+            if (!File.Exists(CollectionFile)) return state;
+            try
+            {
+                var root = Json.DeserializeObject(File.ReadAllText(CollectionFile, Encoding.UTF8)) as Dictionary<string, object>;
+                object rawItems = null;
+                IEnumerable enumerable = root != null && root.TryGetValue("items", out rawItems) ? rawItems as IEnumerable : null;
+                if (enumerable != null && !(rawItems is string)) foreach (object value in enumerable)
+                {
+                    if (state.Items.Count >= CollectionLimit) break;
+                    Dictionary<string, object> raw = value as Dictionary<string, object>;
+                    if (raw == null) continue;
+                    try { state.Items.Add(NormalizeCollectionItem(raw, true)); } catch (UserError) { }
+                }
+                object rawPlaylists = null;
+                IEnumerable playlists = root != null && root.TryGetValue("playlists", out rawPlaylists) ? rawPlaylists as IEnumerable : null;
+                var playlistIds = new HashSet<string>(StringComparer.Ordinal);
+                var playlistNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                if (playlists != null && !(rawPlaylists is string)) foreach (object value in playlists)
+                {
+                    if (state.Playlists.Count >= LocalPlaylistLimit) break;
+                    Dictionary<string, object> raw = value as Dictionary<string, object>;
+                    if (raw == null) continue;
+                    try
+                    {
+                        Dictionary<string, object> playlist = NormalizeLocalPlaylist(raw);
+                        string id = Value(playlist, "id");
+                        string name = Value(playlist, "name");
+                        if (playlistIds.Contains(id) || playlistNames.Contains(name)) continue;
+                        playlistIds.Add(id);
+                        playlistNames.Add(name);
+                        state.Playlists.Add(playlist);
+                    }
+                    catch (UserError) { }
+                }
+                return state;
+            }
+            catch (Exception)
+            {
+                string preserved = CollectionFile + ".corrupt-" + DateTime.UtcNow.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture) + "-" + Guid.NewGuid().ToString("N");
+                try { File.Move(CollectionFile, preserved); } catch { }
+                return state;
+            }
+        }
+
+        private static Dictionary<string, object> NormalizeLocalPlaylist(Dictionary<string, object> raw)
+        {
+            string id = GetString(raw, "id", 32, true).ToLowerInvariant();
+            if (!Regex.IsMatch(id, "^[a-f0-9]{32}$")) throw new UserError("插件歌单 ID 格式无效");
+            string name = ValidateLocalPlaylistName(GetString(raw, "name", 40, true));
+            string createdAt = NormalizeTimestamp(GetString(raw, "createdAt", 40, false));
+            string updatedAt = NormalizeTimestamp(GetString(raw, "updatedAt", 40, false));
+            var tracks = new List<Dictionary<string, object>>();
+            var keys = new HashSet<string>(StringComparer.Ordinal);
+            object rawTracks = null;
+            IEnumerable enumerable = raw.TryGetValue("tracks", out rawTracks) ? rawTracks as IEnumerable : null;
+            if (enumerable != null && !(rawTracks is string)) foreach (object value in enumerable)
+            {
+                if (tracks.Count >= LocalPlaylistTrackLimit) break;
+                Dictionary<string, object> candidate = value as Dictionary<string, object>;
+                if (candidate == null) continue;
+                try
+                {
+                    Dictionary<string, object> item = NormalizeCollectionItem(candidate, true);
+                    if (Value(item, "kind") == "song" && keys.Add(Value(item, "key"))) tracks.Add(item);
+                }
+                catch (UserError) { }
+            }
+            return Map("id", id, "name", name, "createdAt", createdAt, "updatedAt", updatedAt, "tracks", tracks);
+        }
+
+        private static string NormalizeTimestamp(string value)
+        {
+            DateTime parsed;
+            return value != "" && DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out parsed)
+                ? parsed.ToUniversalTime().ToString("o", CultureInfo.InvariantCulture)
+                : DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
+        }
+
+        private static void SaveCollectionUnlocked(CollectionState state)
+        {
+            Directory.CreateDirectory(AppData);
+            string temporary = CollectionFile + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                File.WriteAllText(temporary, Json.Serialize(Map("version", 2, "items", state.Items, "playlists", state.Playlists)), new UTF8Encoding(false));
+                if (File.Exists(CollectionFile)) File.Replace(temporary, CollectionFile, null, true);
+                else File.Move(temporary, CollectionFile);
+            }
+            finally { if (File.Exists(temporary)) File.Delete(temporary); }
+        }
+
+        private static object WithCollectionLock(Func<object> action)
+        {
+            bool held = false;
+            try
+            {
+                try { held = CollectionLock.WaitOne(TimeSpan.FromSeconds(5)); }
+                catch (AbandonedMutexException) { held = true; }
+                if (!held) throw new UserError("插件特藏正忙，请稍后重试");
+                return action();
+            }
+            finally { if (held) CollectionLock.ReleaseMutex(); }
         }
 
         private static object NeteaseSearch(Dictionary<string, object> payload)
@@ -1271,6 +1735,11 @@ namespace CloudMusicEdge
         private static string SafeMessage(string value) { return Compact(value, 300).Replace("qmk-", "[KEY]-"); }
 
         private sealed class UserError : Exception { public UserError(string message) : base(message) { } }
+        private sealed class CollectionState
+        {
+            public readonly List<Dictionary<string, object>> Items = new List<Dictionary<string, object>>();
+            public readonly List<Dictionary<string, object>> Playlists = new List<Dictionary<string, object>>();
+        }
         private sealed class NcmRuntime { public string NodePath; public string ScriptPath; }
         private sealed class ProcessResult { public int ExitCode; public string Stdout = ""; public string Stderr = ""; public bool TimedOut; }
     }

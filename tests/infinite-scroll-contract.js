@@ -37,7 +37,7 @@ if (!/function maybeAutoLoadLibrary\([\s\S]{0,400}isNearListEnd\(libraryResults\
 }
 if (!/entry\.loadingMore/.test(source)
     || !/renderItems\(libraryResults, appended, "library", \{ append: true, startIndex \}\)/.test(source)
-    || !/renderItems\(playlistResults, appended, "playlist", \{ append: true, startIndex \}\)/.test(source)) {
+    || !/renderItems\(playlistResults, appended, entry\.local \? "localPlaylist" : "playlist", \{ append: true, startIndex \}\)/.test(source)) {
   throw new Error("infinite scroll lacks request deduplication or bottom-only DOM append");
 }
 if (!/loadMoreLibrary\(\)[\s\S]{0,300}libraryInFlight\.has\(requestedType\)/.test(source)
